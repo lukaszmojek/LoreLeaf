@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 epub = "2.1.1"
+rstest = "0.18.2"

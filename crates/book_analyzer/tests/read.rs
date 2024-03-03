@@ -1,10 +1,14 @@
 mod book_reading_tests {
+    use rstest::rstest;
     use book_analyzer::{BookDetails, read_specific_book};
 
-    #[test]
-    fn should_return_some_with_details_when_book_exists() {
-        let book_path = "./tests/data/1_Adept.epub".to_string();
-        let expected_details = BookDetails { title: "Adept. Część I".to_string(), author: "Przechrzta Adam".to_string() };
+    //DISCLAIMER: those books are free and downloaded from https://www.gutenberg.org/
+    #[rstest]
+    #[case::the_wonderful_wizard_of_oz("the_wonderful_wizard_of_oz", "The Wonderful Wizard of Oz", "L. Frank Baum")]
+    #[case::the_time_machine("the_time_machine", "The Time Machine", "H. G. Wells")]
+    fn should_return_some_with_details_when_book_exists(#[case] file_name: String, #[case] title: String, #[case] author: String) {
+        let book_path = format!("./tests/data/{file_name}.epub");
+        let expected_details = BookDetails { title, author };
 
         let option_result = read_specific_book(book_path);
 
