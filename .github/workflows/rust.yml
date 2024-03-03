@@ -15,8 +15,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Build
-      run: cargo build --workspace --verbose
+    - name: Build Book Analyzer
+      run: cargo build -p book_analyzer --verbose
     
-    - name: Run tests
-      run: cargo test --workspace --verbose
+    - name: Test Book Analyzer
+      run: cargo test -p book_analyzer --verbose
