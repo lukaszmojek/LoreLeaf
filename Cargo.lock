@@ -175,6 +175,7 @@ name = "app_startup"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "ui",
 ]
 
 [[package]]
