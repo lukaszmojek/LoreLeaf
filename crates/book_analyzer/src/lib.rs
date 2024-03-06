@@ -1,17 +1,17 @@
-use epub::doc::{EpubDoc, NavPoint};
-use std::fs::File;
-use std::io::BufReader;
+use rbook::{Ebook, Epub, Reader};
+use rbook::epub::Toc;
+use rbook::xml::Element;
 
 #[derive(Debug)]
 pub struct BookDetails {
     pub title: String,
-    pub author: String,
-    file: EpubDoc<BufReader<File>>
+    pub creators: String,
+    _epub: Epub
 }
 
 impl BookDetails {
-    pub fn create_with_epubrs(book_path: String) -> Option<BookDetails> {
-        let doc = EpubDoc::new(book_path);
+    pub fn create(book_path: String) -> Option<BookDetails> {
+        let doc = rbook::Epub::new(book_path);
 
         if doc.is_err() {
             //TODO: Think how to handle errors
@@ -20,98 +20,58 @@ impl BookDetails {
 
         let doc = doc.unwrap();
 
-        //TODO: Improve metadata extraction from book, firstly by list of mappings, later can be improved
-        let title = doc.mdata("title").unwrap_or_else(|| "Unknown".to_string());
-        let author = doc.mdata("creator").unwrap_or_else(|| "Unknown".to_string());
-
-        Some(BookDetails {
-            title,
-            author,
-            file: doc,
-        })
-    }
-
-    pub fn create_with_rbook(book_path: String) -> Option<BookDetails> {
-        let doc = EpubDoc::new(book_path);
-
-        if doc.is_err() {
-            //TODO: Think how to handle errors
-            return None;
-        }
-
-        let doc = doc.unwrap();
-
-        //TODO: Improve metadata extraction from book, firstly by list of mappings, later can be improved
-        let title = doc.mdata("title").unwrap_or_else(|| "Unknown".to_string());
-        let author = doc.mdata("creator").unwrap_or_else(|| "Unknown".to_string());
-
-        Some(BookDetails {
-            title,
-            author,
-            file: doc,
-        })
-    }
-    
-    pub fn table_of_contents(&self) -> Vec<NavPoint> {
-        self.file.toc.clone()
-    }
-    
-    pub fn number_of_chapters(&self) -> usize {
-        self.file.get_num_pages()
-    }
-
-    pub fn get_chapter(&mut self, index: usize) -> Option<(String, String)> {
-        let chapter_nav_point = self.file.toc.get(index);
-
-        if chapter_nav_point.is_none() {
-            return None;
-        }
-        
-        let chapter_path = chapter_nav_point.unwrap().clone().content;
-        println!("{:?}", chapter_path);
-        let chapter_content = self.file.get_resource_str(chapter_path.to_str().unwrap());
-        
-        chapter_content
-    }
-
-    pub fn get_page(&mut self, index: usize) -> Option<(Vec<u8>, String)> {
-        // let was_page_changed = self.file.set_current_page(index);
-        // 
-        // if was_page_changed {
-        //     return None;
-        // }
-        let moved = self.file.go_next();
-        let moved = self.file.go_next();
-        let moved = self.file.go_next();
-        let moved = self.file.go_next();
-        let moved = self.file.go_next();
-        
-        let current_page = match self.file.get_current() {
-            None => {None}
-            Some(content) => {Some(content)}
+        let title = match doc.metadata().title() {
+            None => {"Unknown".to_string()}
+            Some(metadata) => {metadata.value().to_string()}
         };
-        
-        current_page 
+
+        let creators = doc.metadata()
+            .creators()
+            .iter()
+            .map(|&x| x.value())
+            .collect();
+
+        Some(BookDetails {
+            title,
+            creators,
+            _epub: doc
+        })
     }
 
-    pub fn get_book_contents(&mut self) -> Vec<&String> {
-        let mut book_contents: Vec<&String> = vec![];
-        
-        for content in self.file.spine.iter() {
-            book_contents.push(content);
-        }
-        
-        book_contents
+    pub fn table_of_contents(&self) -> &Toc {
+        self._epub.toc()
     }
-    
-    pub fn get_spine(&self) -> Vec<String> {
-        self.file.spine.clone()
+
+    pub fn reader(&self) -> Reader {
+        self._epub.reader()
     }
+
+    pub fn get_chapter(&self, chapter_id: &str) -> &Element {
+        let manifest = self._epub.manifest();
+println!("{:?}", manifest.elements()[3].name());
+println!("{:?}", manifest.elements()[3].value());
+println!("{:?}", manifest.elements()[3].children());
+        self._epub.manifest().by_id(chapter_id).unwrap()
+    }
+    //
+    // pub fn get_book_contents(&mut self) -> Vec<&String> {
+    //     let mut book_contents: Vec<&String> = vec![];
+    //
+    //     for content in self.file.spine.iter() {
+    //         book_contents.push(content);
+    //     }
+    //
+    //     book_contents
+    // }
+    //
+    // pub fn get_spine(&self) -> Vec<String> {
+    //     self.file.spine.clone()
+    // }
 }
 
 impl PartialEq for BookDetails {
     fn eq(&self, other: &Self) -> bool {
-        self.title == other.title && self.author == other.author
+        self.title == other.title && self.creators == other.creators
     }
 }
 

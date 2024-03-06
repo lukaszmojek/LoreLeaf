@@ -1199,7 +1199,6 @@ dependencies = [
 name = "book_analyzer"
 version = "0.1.0"
 dependencies = [
- "epub",
  "rbook",
  "rstest",
 ]
@@ -1753,19 +1752,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7268b386296a025e474d5140678f75d6de9493ae55a5d709eeb9dd08149945e1"
 dependencies = [
  "cfg-if",
-]
-
-[[package]]
-name = "epub"
-version = "2.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7538474d3e8793ff36a1fa28e7de7b0aa4bf7498d04f0cb43ad58b6722c0c490"
-dependencies = [
- "percent-encoding",
- "regex",
- "thiserror",
- "xml-rs",
- "zip",
 ]
 
 [[package]]
