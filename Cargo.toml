@@ -8,7 +8,9 @@ edition = "2021"
 [workspace]
 
 members = [
-    "crates/app_startup", "crates/book_analyzer",
+    "crates/app_startup",
+    "crates/book_analyzer",
+    "crates/epub",
     "crates/ui",
 ]
 
