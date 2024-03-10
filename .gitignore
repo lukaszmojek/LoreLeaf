@@ -10,3 +10,16 @@ target/
 
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
+
+# Extracted epubs for local analysis
+/crates/epub/data/extracted/**
+
+# Jetbrains IDEs
+/.idea/shelf/Changes/shelved.patch
+/.idea/shelf/Changes1/shelved.patch
+/.idea/shelf/Changes.xml
+/.idea/shelf/Changes1.xml
+/.idea/LoreLeaf.iml
+/.idea/modules.xml
+/.idea/vcs.xml
+/.idea/workspace.xml
