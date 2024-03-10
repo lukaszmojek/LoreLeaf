@@ -1,11 +1,15 @@
+mod metadata;
+
 use quick_xml::events::Event;
+use quick_xml::name::QName;
 use quick_xml::Reader;
 use std::fs::File;
 use std::io::Read;
-use quick_xml::name::QName;
 use zip::ZipArchive;
 
-fn read_epub() -> Result<(), Box<dyn std::error::Error>> {
+use crate::metadata::BookMetadata;
+
+fn read_epub(epub_path: String) -> Result<(), Box<dyn std::error::Error>> {
     let epub_file = File::open("./data/moby-dick.epub")?;
     let mut archive = ZipArchive::new(epub_file)?;
 
@@ -44,7 +48,7 @@ fn parse_container(zip: &mut ZipArchive<File>) -> Result<String, Box<dyn std::er
                                 break;
                             }
                         }
-                    },
+                    }
                     _ => (),
                 }
             }
@@ -64,22 +68,25 @@ fn parse_container(zip: &mut ZipArchive<File>) -> Result<String, Box<dyn std::er
 }
 
 // Assume `opf_path` is the path obtained from the previous step
-fn parse_opf(zip: &mut ZipArchive<File>, opf_path: &str) -> Result<BookMetadata, Box<dyn std::error::Error>> {
+fn parse_opf(
+    zip: &mut ZipArchive<File>,
+    opf_path: &str,
+) -> Result<Book, Box<dyn std::error::Error>> {
     let opf_content = get_opf_content(zip, opf_path).unwrap_or_else(|err| {
         eprintln!("{:?}", err);
         "NONE".to_string()
     });
 
-    let metadata = BookMetadata::create_from_opf(&opf_content);
+    let book = Book::create_from_opf(&opf_content);
     println!("{:?}", opf_content);
 
-    // Use quick-xml or another XML parser to parse the contents
-    // Extract metadata, manifest items, and spine order
-
-    Ok(metadata)
+    Ok(book)
 }
 
-fn get_opf_content(zip: &mut ZipArchive<File>, opf_path: &str) -> Result<String, Box<dyn std::error::Error>> {
+fn get_opf_content(
+    zip: &mut ZipArchive<File>,
+    opf_path: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
     let mut opf_file = zip.by_name(opf_path)?;
     let mut contents = String::new();
     opf_file.read_to_string(&mut contents)?;
@@ -87,54 +94,48 @@ fn get_opf_content(zip: &mut ZipArchive<File>, opf_path: &str) -> Result<String,
     Ok(contents)
 }
 
-#[derive(Debug)]
-struct BookMetadata {
-    title: Option<String>,
-    creator: Option<String>,
-    identifier: Option<String>,
-    language: Option<String>,
-    publisher: Option<String>,
-    rights: Option<String>,
+struct Book {
+    metadata: BookMetadata,
+    spine: BookSpine,
 }
 
-//TODO: Consider adding implementation of 'cleaning up' the metadata to remove characters such as '-' and '_' from raw metadata strings
-//NOTE: It should be applicable only to certain metadata such as Creator and Title
-impl BookMetadata {
-    pub fn create_from_opf(opf_content: &String) -> BookMetadata {
+#[derive(Debug)]
+struct BookSpine {
+    items: Vec<BookSpineItem>,
+}
+
+#[derive(Debug)]
+struct BookSpineItem {
+    id: String,
+}
+
+impl BookSpine {
+    pub fn from_opf(opf_content: &String) -> BookSpine {
         let mut reader = Reader::from_str(opf_content);
         reader.trim_text(true);
 
         let mut buf = Vec::new();
-        let mut metadata = BookMetadata {
-            title: None,
-            creator: None,
-            identifier: None,
-            language: None,
-            publisher: None,
-            rights: None,
-        };
-
-        let mut current_tag = String::new();
+        let mut spine: Vec<BookSpineItem> = Vec::new();
 
         while let Ok(event) = reader.read_event_into(&mut buf) {
             match event {
                 Event::Start(ref e) | Event::Empty(ref e) => {
-                    current_tag = String::from_utf8(e.name().as_ref().to_vec()).unwrap();
-                }
-                Event::Text(e) => {
-                    let text = e.unescape().unwrap().to_string();
-                    match current_tag.as_str() {
-                        "dc:title" => metadata.title = Some(text),
-                        "dc:creator" => metadata.creator = Some(text),
-                        "dc:identifier" => metadata.identifier = Some(text),
-                        "dc:language" => metadata.language = Some(text),
-                        "dc:publisher" => metadata.publisher = Some(text),
-                        "dc:rights" => metadata.rights = Some(text),
-                        _ => {},
+                    // current_tag = String::from_utf8(e.name().as_ref().to_vec()).unwrap();
+                    match e.name().as_ref() {
+                        b"itemref" => {
+                            for attribute in e.attributes() {
+                                let attr = attribute.unwrap();
+                                if attr.key == QName(b"idref") {
+                                    let spine_item = BookSpineItem {
+                                        id: String::from_utf8(attr.value.into_owned()).unwrap(),
+                                    };
+                                    spine.push(spine_item);
+                                    break;
+                                }
+                            }
+                        }
+                        _ => (),
                     }
-                }
-                Event::End(_) => {
-                    current_tag.clear();
                 }
                 Event::Eof => break,
                 _ => {}
@@ -142,7 +143,18 @@ impl BookMetadata {
             buf.clear();
         }
 
-        metadata
+        BookSpine { items: spine }
+    }
+}
+
+impl Book {
+    pub fn create_from_opf(opf_content: &String) -> Book {
+        let metadata = BookMetadata::from_opf(opf_content);
+        let spine = BookSpine::from_opf(opf_content);
+
+        println!("{:?}", spine);
+
+        Book { metadata, spine }
     }
 }
 
@@ -162,24 +174,51 @@ mod tests {
     }
 
     #[test]
-    fn parse_opf_should_return_book_metadata() {
+    fn parse_opf_should_return_book_with_correct_metadata() {
         let epub_file = File::open("./data/moby-dick.epub").unwrap();
         let mut archive = ZipArchive::new(epub_file).unwrap();
 
         let opf_path = parse_container(&mut archive).unwrap();
-        let book_metadata = parse_opf(&mut archive, &opf_path).unwrap();
+        let book = parse_opf(&mut archive, &opf_path).unwrap();
+
+        let book_metadata = book.metadata;
 
         assert!(book_metadata.creator.is_some());
-        assert_eq!(book_metadata.creator.unwrap(), "Herman Melville".to_string());
+        assert_eq!(
+            book_metadata.creator.unwrap(),
+            "Herman Melville".to_string()
+        );
         assert!(book_metadata.title.is_some());
         assert_eq!(book_metadata.title.unwrap(), "Moby-Dick".to_string());
         assert!(book_metadata.language.is_some());
         assert_eq!(book_metadata.language.unwrap(), "en-US".to_string());
         assert!(book_metadata.identifier.is_some());
-        assert_eq!(book_metadata.identifier.unwrap(), "code.google.com.epub-samples.moby-dick-basic".to_string());
+        assert_eq!(
+            book_metadata.identifier.unwrap(),
+            "code.google.com.epub-samples.moby-dick-basic".to_string()
+        );
         assert!(book_metadata.publisher.is_some());
-        assert_eq!(book_metadata.publisher.unwrap(), "Harper & Brothers, Publishers".to_string());
+        assert_eq!(
+            book_metadata.publisher.unwrap(),
+            "Harper & Brothers, Publishers".to_string()
+        );
         assert!(book_metadata.rights.is_some());
-        assert_eq!(book_metadata.rights.unwrap(), "This work is shared with the public using the Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0) license.".to_string());
+        assert_eq!(book_metadata.rights.unwrap(),
+            "This work is shared with the public using the Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0) license.".to_string());
+    }
+
+    #[test]
+    fn parse_opf_should_return_book_with_correct_spine() {
+        let epub_file = File::open("./data/moby-dick.epub").unwrap();
+        let mut archive = ZipArchive::new(epub_file).unwrap();
+
+        let opf_path = parse_container(&mut archive).unwrap();
+        let book = parse_opf(&mut archive, &opf_path).unwrap();
+
+        let spine = book.spine;
+
+        assert_eq!(spine.items.len(), 144);
+        assert_eq!(spine.items[0].id, "cover");
+        assert_eq!(spine.items[143].id, "toc");
     }
 }
