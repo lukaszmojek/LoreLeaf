@@ -1,8 +1,10 @@
 mod metadata;
+mod spine;
 
 use quick_xml::events::Event;
 use quick_xml::name::QName;
 use quick_xml::Reader;
+use spine::BookSpine;
 use std::fs::File;
 use std::io::Read;
 use zip::ZipArchive;
@@ -39,17 +41,14 @@ fn parse_container(zip: &mut ZipArchive<File>) -> Result<String, Box<dyn std::er
             Ok(Event::Eof) => break,
             Ok(Event::Start(e) | Event::Empty(e)) => {
                 println!("{:?}", e);
-                match e.name().as_ref() {
-                    b"rootfile" => {
-                        for attribute in e.attributes() {
-                            let attr = attribute?;
-                            if attr.key == QName(b"full-path") {
-                                opf_path = String::from_utf8(attr.value.into_owned())?;
-                                break;
-                            }
+                if let b"rootfile" = e.name().as_ref() {
+                    for attribute in e.attributes() {
+                        let attr = attribute?;
+                        if attr.key == QName(b"full-path") {
+                            opf_path = String::from_utf8(attr.value.into_owned())?;
+                            break;
                         }
                     }
-                    _ => (),
                 }
             }
             Ok(Event::Text(e)) => txt.push(e.unescape().unwrap().into_owned()),
@@ -97,54 +96,6 @@ fn get_opf_content(
 struct Book {
     metadata: BookMetadata,
     spine: BookSpine,
-}
-
-#[derive(Debug)]
-struct BookSpine {
-    items: Vec<BookSpineItem>,
-}
-
-#[derive(Debug)]
-struct BookSpineItem {
-    id: String,
-}
-
-impl BookSpine {
-    pub fn from_opf(opf_content: &String) -> BookSpine {
-        let mut reader = Reader::from_str(opf_content);
-        reader.trim_text(true);
-
-        let mut buf = Vec::new();
-        let mut spine: Vec<BookSpineItem> = Vec::new();
-
-        while let Ok(event) = reader.read_event_into(&mut buf) {
-            match event {
-                Event::Start(ref e) | Event::Empty(ref e) => {
-                    // current_tag = String::from_utf8(e.name().as_ref().to_vec()).unwrap();
-                    match e.name().as_ref() {
-                        b"itemref" => {
-                            for attribute in e.attributes() {
-                                let attr = attribute.unwrap();
-                                if attr.key == QName(b"idref") {
-                                    let spine_item = BookSpineItem {
-                                        id: String::from_utf8(attr.value.into_owned()).unwrap(),
-                                    };
-                                    spine.push(spine_item);
-                                    break;
-                                }
-                            }
-                        }
-                        _ => (),
-                    }
-                }
-                Event::Eof => break,
-                _ => {}
-            }
-            buf.clear();
-        }
-
-        BookSpine { items: spine }
-    }
 }
 
 impl Book {
