@@ -96,21 +96,97 @@ fn get_opf_content(
 struct Book {
     metadata: BookMetadata,
     spine: BookSpine,
+    manifest: BookManifest,
+}
+
+struct BookManifest {
+    items: Vec<ManifestItem>,
+}
+
+impl BookManifest {
+    pub fn from_opf(opf_content: &String) -> BookManifest {
+        let mut reader = Reader::from_str(opf_content);
+        reader.trim_text(true);
+
+        let mut buf = Vec::new();
+        let mut manifest_items: Vec<ManifestItem> = vec![];
+
+        let mut current_tag = String::new();
+
+        while let Ok(event) = reader.read_event_into(&mut buf) {
+            match event {
+                Event::Start(ref e) | Event::Empty(ref e) => {
+                    // current_tag = String::from_utf8(e.name().as_ref().to_vec()).unwrap();
+                    if let b"item" = e.name().as_ref() {
+                        let mut id = "".to_string();
+                        let mut href = "".to_string();
+                        let mut media_type = "".to_string();
+
+                        for attribute_result in e.attributes() {
+                            let attribute = attribute_result.unwrap();
+                            println!("{:?}", attribute);
+                            match attribute.key {
+                                QName(b"id") => {
+                                    id = String::from_utf8(attribute.value.into_owned()).unwrap();
+                                }
+                                QName(b"href") => {
+                                    href = String::from_utf8(attribute.value.into_owned()).unwrap();
+                                }
+                                QName(b"media-type") => {
+                                    media_type =
+                                        String::from_utf8(attribute.value.into_owned()).unwrap();
+                                }
+                                _ => {}
+                            }
+                        }
+
+                        let manifest_item = ManifestItem {
+                            id,
+                            href,
+                            media_type,
+                        };
+                        manifest_items.push(manifest_item)
+                    }
+                }
+                Event::Eof => break,
+                _ => {}
+            }
+            buf.clear();
+        }
+
+        BookManifest {
+            items: manifest_items,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct ManifestItem {
+    id: String,
+    href: String,
+    media_type: String,
 }
 
 impl Book {
     pub fn create_from_opf(opf_content: &String) -> Book {
+        let manifest = BookManifest::from_opf(opf_content);
         let metadata = BookMetadata::from_opf(opf_content);
         let spine = BookSpine::from_opf(opf_content);
 
         println!("{:?}", spine);
 
-        Book { metadata, spine }
+        Book {
+            metadata,
+            spine,
+            manifest,
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::borrow::Borrow;
+
     use super::*;
 
     #[test]
@@ -171,5 +247,29 @@ mod tests {
         assert_eq!(spine.items.len(), 144);
         assert_eq!(spine.items[0].id, "cover");
         assert_eq!(spine.items[143].id, "toc");
+    }
+
+    #[test]
+    fn parse_opf_should_return_book_with_correct_manifest() {
+        let epub_file = File::open("./data/moby-dick.epub").unwrap();
+        let mut archive = ZipArchive::new(epub_file).unwrap();
+
+        let opf_path = parse_container(&mut archive).unwrap();
+        let book = parse_opf(&mut archive, &opf_path).unwrap();
+
+        let manifest = book.manifest;
+
+        let first_item = manifest.items[0].borrow();
+        println!("{:?}", first_item);
+        assert_eq!(manifest.items.len(), 151);
+        assert_eq!(manifest.items[0].id, "font.stix.regular");
+        assert_eq!(manifest.items[0].href, "fonts/STIXGeneral.otf");
+        assert_eq!(manifest.items[0].media_type, "application/vnd.ms-opentype");
+        assert_eq!(manifest.items[1].id, "font.stix.italic");
+        assert_eq!(manifest.items[2].id, "font.stix.bold");
+        assert_eq!(manifest.items[3].id, "font.stix.bold.italic");
+        assert_eq!(manifest.items[4].id, "toc");
+        assert_eq!(manifest.items[149].id, "xchapter_136");
+        assert_eq!(manifest.items[150].id, "brief-toc");
     }
 }

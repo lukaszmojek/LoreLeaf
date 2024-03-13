@@ -1,4 +1,8 @@
+use std::rc::Rc;
+
 use quick_xml::{events::Event, name::QName, Reader};
+
+use crate::ManifestItem;
 
 #[derive(Debug)]
 pub struct BookSpine {
@@ -8,6 +12,8 @@ pub struct BookSpine {
 #[derive(Debug)]
 pub struct BookSpineItem {
     pub id: String,
+    //TODO: Connect spine item with manifest item
+    // value: Rc<ManifestItem>,
 }
 
 impl BookSpine {
