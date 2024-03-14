@@ -5,8 +5,10 @@ use quick_xml::events::Event;
 use quick_xml::name::QName;
 use quick_xml::Reader;
 use spine::BookSpine;
+use std::borrow::Borrow;
 use std::fs::File;
 use std::io::Read;
+use std::rc::Rc;
 use zip::ZipArchive;
 
 use crate::metadata::BookMetadata;
@@ -99,8 +101,10 @@ struct Book {
     manifest: BookManifest,
 }
 
+/// Struct to represent all items from the manifest
 struct BookManifest {
-    items: Vec<ManifestItem>,
+    /// Each epub needs to have a list of manifest items
+    items: Vec<Rc<ManifestItem>>,
 }
 
 impl BookManifest {
@@ -109,43 +113,13 @@ impl BookManifest {
         reader.trim_text(true);
 
         let mut buf = Vec::new();
-        let mut manifest_items: Vec<ManifestItem> = vec![];
-
-        let mut current_tag = String::new();
+        let mut manifest_items: Vec<Rc<ManifestItem>> = vec![];
 
         while let Ok(event) = reader.read_event_into(&mut buf) {
             match event {
                 Event::Start(ref e) | Event::Empty(ref e) => {
-                    // current_tag = String::from_utf8(e.name().as_ref().to_vec()).unwrap();
                     if let b"item" = e.name().as_ref() {
-                        let mut id = "".to_string();
-                        let mut href = "".to_string();
-                        let mut media_type = "".to_string();
-
-                        for attribute_result in e.attributes() {
-                            let attribute = attribute_result.unwrap();
-                            println!("{:?}", attribute);
-                            match attribute.key {
-                                QName(b"id") => {
-                                    id = String::from_utf8(attribute.value.into_owned()).unwrap();
-                                }
-                                QName(b"href") => {
-                                    href = String::from_utf8(attribute.value.into_owned()).unwrap();
-                                }
-                                QName(b"media-type") => {
-                                    media_type =
-                                        String::from_utf8(attribute.value.into_owned()).unwrap();
-                                }
-                                _ => {}
-                            }
-                        }
-
-                        let manifest_item = ManifestItem {
-                            id,
-                            href,
-                            media_type,
-                        };
-                        manifest_items.push(manifest_item)
+                        BookManifest::recreate_manifest_entry(e, &mut manifest_items);
                     }
                 }
                 Event::Eof => break,
@@ -158,22 +132,60 @@ impl BookManifest {
             items: manifest_items,
         }
     }
+
+    //TODO: Consider moving to ManifestItem
+    fn recreate_manifest_entry(
+        e: &quick_xml::events::BytesStart<'_>,
+        manifest_items: &mut Vec<Rc<ManifestItem>>,
+    ) {
+        let mut id = "".to_string();
+        let mut href = "".to_string();
+        let mut media_type = "".to_string();
+
+        for attribute_result in e.attributes() {
+            let attribute = attribute_result.unwrap();
+            println!("{:?}", attribute);
+            match attribute.key {
+                QName(b"id") => {
+                    id = String::from_utf8(attribute.value.into_owned()).unwrap();
+                }
+                QName(b"href") => {
+                    href = String::from_utf8(attribute.value.into_owned()).unwrap();
+                }
+                QName(b"media-type") => {
+                    media_type = String::from_utf8(attribute.value.into_owned()).unwrap();
+                }
+                _ => {}
+            }
+        }
+
+        let manifest_item = ManifestItem {
+            id,
+            href,
+            media_type,
+        };
+        manifest_items.push(Rc::new(manifest_item))
+    }
 }
 
 #[derive(Debug)]
-struct ManifestItem {
+pub struct ManifestItem {
     id: String,
     href: String,
     media_type: String,
+}
+
+impl PartialEq for ManifestItem {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id && self.href == other.href && self.media_type == other.media_type
+    }
 }
 
 impl Book {
     pub fn create_from_opf(opf_content: &String) -> Book {
         let manifest = BookManifest::from_opf(opf_content);
         let metadata = BookMetadata::from_opf(opf_content);
-        let spine = BookSpine::from_opf(opf_content);
-
-        println!("{:?}", spine);
+        let spine = BookSpine::from_opf_and_manifest(opf_content, manifest.borrow());
 
         Book {
             metadata,
@@ -185,8 +197,6 @@ impl Book {
 
 #[cfg(test)]
 mod tests {
-    use std::borrow::Borrow;
-
     use super::*;
 
     #[test]
@@ -238,6 +248,16 @@ mod tests {
     fn parse_opf_should_return_book_with_correct_spine() {
         let epub_file = File::open("./data/moby-dick.epub").unwrap();
         let mut archive = ZipArchive::new(epub_file).unwrap();
+        let expected_cover_manifest_item = ManifestItem {
+            id: "cover".to_string(),
+            href: "cover.xhtml".to_string(),
+            media_type: "application/xhtml+xml".to_string(),
+        };
+        let expected_toc_manifest_item = ManifestItem {
+            id: "toc".to_string(),
+            href: "toc.xhtml".to_string(),
+            media_type: "application/xhtml+xml".to_string(),
+        };
 
         let opf_path = parse_container(&mut archive).unwrap();
         let book = parse_opf(&mut archive, &opf_path).unwrap();
@@ -246,7 +266,15 @@ mod tests {
 
         assert_eq!(spine.items.len(), 144);
         assert_eq!(spine.items[0].id, "cover");
+        assert_eq!(
+            *(spine.items[0].value.clone()),
+            expected_cover_manifest_item
+        );
         assert_eq!(spine.items[143].id, "toc");
+        assert_eq!(
+            *(spine.items[143].value.clone()),
+            expected_toc_manifest_item
+        );
     }
 
     #[test]
@@ -259,7 +287,7 @@ mod tests {
 
         let manifest = book.manifest;
 
-        let first_item = manifest.items[0].borrow();
+        let first_item = manifest.items[0].as_ref();
         println!("{:?}", first_item);
         assert_eq!(manifest.items.len(), 151);
         assert_eq!(manifest.items[0].id, "font.stix.regular");
