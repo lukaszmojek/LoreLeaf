@@ -144,7 +144,6 @@ impl BookManifest {
 
         for attribute_result in e.attributes() {
             let attribute = attribute_result.unwrap();
-            println!("{:?}", attribute);
             match attribute.key {
                 QName(b"id") => {
                     id = String::from_utf8(attribute.value.into_owned()).unwrap();
@@ -165,6 +164,18 @@ impl BookManifest {
             media_type,
         };
         manifest_items.push(Rc::new(manifest_item))
+    }
+
+    /// Search for an item in the manifest by part of its id or href.
+    /// Returns the first item that matches the search.
+    pub fn search_for_item(&self, query: &str) -> Option<Rc<ManifestItem>> {
+        for item in &self.items {
+            if item.id.contains(query) || item.href.contains(query) {
+                return Some(item.clone());
+            }
+        }
+
+        None
     }
 }
 
@@ -196,7 +207,7 @@ impl Book {
 }
 
 #[cfg(test)]
-mod tests {
+mod book_tests {
     use super::*;
 
     #[test]
@@ -299,5 +310,29 @@ mod tests {
         assert_eq!(manifest.items[4].id, "toc");
         assert_eq!(manifest.items[149].id, "xchapter_136");
         assert_eq!(manifest.items[150].id, "brief-toc");
+    }
+}
+
+#[cfg(test)]
+mod manifest_tests {
+    use super::*;
+
+    #[test]
+    fn search_for_item_should_return_matching_item_when_queried() {
+        let epub_file = File::open("./data/moby-dick.epub").unwrap();
+        let mut archive = ZipArchive::new(epub_file).unwrap();
+
+        let opf_path = parse_container(&mut archive).unwrap();
+        let book = parse_opf(&mut archive, &opf_path).unwrap();
+
+        let manifest = book.manifest;
+
+        let toc_from_manifest = manifest
+            .search_for_item("toc")
+            .unwrap_or_else(|| panic!("toc was not found during search in manifest"));
+
+        assert_eq!(toc_from_manifest.id, "toc");
+        assert_eq!(toc_from_manifest.href, "toc.xhtml");
+        assert_eq!(toc_from_manifest.media_type, "application/xhtml+xml");
     }
 }
