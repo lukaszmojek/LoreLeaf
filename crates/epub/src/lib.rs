@@ -1,6 +1,8 @@
+mod manifest;
 mod metadata;
 mod spine;
 
+use manifest::{BookManifest, ManifestItem};
 use quick_xml::events::Event;
 use quick_xml::name::QName;
 use quick_xml::Reader;
@@ -8,7 +10,6 @@ use spine::BookSpine;
 use std::borrow::Borrow;
 use std::fs::File;
 use std::io::Read;
-use std::rc::Rc;
 use zip::ZipArchive;
 
 use crate::metadata::BookMetadata;
@@ -101,97 +102,6 @@ struct Book {
     manifest: BookManifest,
 }
 
-/// Struct to represent all items from the manifest
-struct BookManifest {
-    /// Each epub needs to have a list of manifest items
-    items: Vec<Rc<ManifestItem>>,
-}
-
-impl BookManifest {
-    pub fn from_opf(opf_content: &String) -> BookManifest {
-        let mut reader = Reader::from_str(opf_content);
-        reader.trim_text(true);
-
-        let mut buf = Vec::new();
-        let mut manifest_items: Vec<Rc<ManifestItem>> = vec![];
-
-        while let Ok(event) = reader.read_event_into(&mut buf) {
-            match event {
-                Event::Start(ref e) | Event::Empty(ref e) => {
-                    if let b"item" = e.name().as_ref() {
-                        BookManifest::recreate_manifest_entry(e, &mut manifest_items);
-                    }
-                }
-                Event::Eof => break,
-                _ => {}
-            }
-            buf.clear();
-        }
-
-        BookManifest {
-            items: manifest_items,
-        }
-    }
-
-    //TODO: Consider moving to ManifestItem
-    fn recreate_manifest_entry(
-        e: &quick_xml::events::BytesStart<'_>,
-        manifest_items: &mut Vec<Rc<ManifestItem>>,
-    ) {
-        let mut id = "".to_string();
-        let mut href = "".to_string();
-        let mut media_type = "".to_string();
-
-        for attribute_result in e.attributes() {
-            let attribute = attribute_result.unwrap();
-            match attribute.key {
-                QName(b"id") => {
-                    id = String::from_utf8(attribute.value.into_owned()).unwrap();
-                }
-                QName(b"href") => {
-                    href = String::from_utf8(attribute.value.into_owned()).unwrap();
-                }
-                QName(b"media-type") => {
-                    media_type = String::from_utf8(attribute.value.into_owned()).unwrap();
-                }
-                _ => {}
-            }
-        }
-
-        let manifest_item = ManifestItem {
-            id,
-            href,
-            media_type,
-        };
-        manifest_items.push(Rc::new(manifest_item))
-    }
-
-    /// Search for an item in the manifest by part of its id or href.
-    /// Returns the first item that matches the search.
-    pub fn search_for_item(&self, query: &str) -> Option<Rc<ManifestItem>> {
-        for item in &self.items {
-            if item.id.contains(query) || item.href.contains(query) {
-                return Some(item.clone());
-            }
-        }
-
-        None
-    }
-}
-
-#[derive(Debug)]
-pub struct ManifestItem {
-    id: String,
-    href: String,
-    media_type: String,
-}
-
-impl PartialEq for ManifestItem {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id && self.href == other.href && self.media_type == other.media_type
-    }
-}
-
 impl Book {
     pub fn create_from_opf(opf_content: &String) -> Book {
         let manifest = BookManifest::from_opf(opf_content);
@@ -208,6 +118,8 @@ impl Book {
 
 #[cfg(test)]
 mod book_tests {
+    use crate::manifest::ManifestItem;
+
     use super::*;
 
     #[test]
