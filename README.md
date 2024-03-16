@@ -45,12 +45,12 @@ Since from all of those, the one that is giving the most freedom is **Bevy**, I 
 - [ ] Analyzing books
   - [ ] Ability to automatically scrape all the data from inside the book to create a lore 'database'
 
-
 ### Task list
+
 - [ ] Epub
   - [ ] Parse container
-    - [X] Extract metadata
-    - [X] Extract spine
-    - [ ] Extract manifest
+    - [x] Extract metadata
+    - [x] Extract spine
+    - [x] Extract manifest
     - [ ] Check whether it would be easier to rely on toc and toc-short for navigation (and if they exist in all epubs)
-    - [ ] Bundle spine and manifest items together for easy navigation
+    - [x] Bundle spine and manifest items together for easy navigation
