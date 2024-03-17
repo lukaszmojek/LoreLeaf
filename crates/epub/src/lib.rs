@@ -10,6 +10,7 @@ use spine::BookSpine;
 use std::borrow::Borrow;
 use std::fs::File;
 use std::io::Read;
+use std::path::{Path, PathBuf};
 use zip::ZipArchive;
 
 use crate::metadata::BookMetadata;
@@ -18,61 +19,101 @@ struct Book {
     metadata: BookMetadata,
     spine: BookSpine,
     manifest: BookManifest,
-    // table_of_contents: TableOfContents,
+    table_of_contents: TableOfContents,
+    _content_dir: PathBuf,
 }
 
 struct TableOfContents {
-    // items: Vec<TableOfContentsItem>,
+    items: Vec<TableOfContentsItem>,
 }
 
 struct TableOfContentsItem {
     // id: String,
-    // href: String,
-    // label: String,
+    href: String,
+    label: String,
 }
 
 impl TableOfContentsItem {
-    pub fn recreate(e: &quick_xml::events::BytesStart<'_>) -> TableOfContentsItem {
-        let mut href: String;
-        let mut label: String;
+    pub fn get_href(e: &quick_xml::events::BytesStart<'_>) -> String {
+        let mut href: String = "".to_string();
 
         for attribute in e.attributes() {
             let attr = attribute.unwrap();
+
             if attr.key == QName(b"href") {
                 href = String::from_utf8(attr.value.to_vec()).unwrap();
-            } else if attr.key == QName(b"label") {
-                label = String::from_utf8(attr.value.to_vec()).unwrap();
             }
         }
 
-        println!("{:?}", e);
-
-        TableOfContentsItem {}
+        href
     }
 }
 
 impl TableOfContents {
-    pub fn from_href(path_to_toc: String) -> TableOfContents {
-        // let mut reader = Reader::from_str(path_to_toc);
-        // reader.trim_text(true);
+    pub fn from_content(toc_content: String) -> TableOfContents {
+        let mut reader = Reader::from_str(toc_content.borrow());
+        reader.trim_text(true);
+        println!("{:?}", toc_content);
+        let navigation_selector: String = "toc".to_string();
 
-        // let mut buf = Vec::new();
-        // let mut toc_items: Vec<TableOfContentsItem> = vec![];
+        let mut buf = Vec::new();
+        let mut toc_items: Vec<TableOfContentsItem> = vec![];
 
-        // while let Ok(event) = reader.read_event_into(&mut buf) {
-        //     match event {
-        //         Event::Start(ref e) | Event::Empty(ref e) => {
-        //             if let b"a" = e.name().as_ref() {
-        //                 let toc_item = TableOfContentsItem::recreate(e);
-        //             }
-        //         }
-        //         Event::Eof => break,
-        //         _ => {}
-        //     }
-        //     buf.clear();
-        // }
+        let mut toc_item_href: String = "".to_string();
+        let mut toc_item_label: String = "".to_string();
+        let mut toc_item_reading_started: bool = false;
+        let mut is_inside_toc_nav: bool = false;
 
-        TableOfContents {}
+        while let Ok(event) = reader.read_event_into(&mut buf) {
+            match event {
+                Event::Start(ref e) | Event::Empty(ref e) => {
+                    //TODO: Refactor that attribute check
+                    _ = e.attributes().any(|x| -> bool {
+                        if let Ok(attr) = x {
+                            if attr.key == QName(b"epub:type") {
+                                let ns = String::from_utf8(attr.value.to_vec()).unwrap();
+                                is_inside_toc_nav = ns == navigation_selector;
+                            }
+                        }
+
+                        false
+                    });
+
+                    if let b"a" = e.name().as_ref() {
+                        toc_item_href = TableOfContentsItem::get_href(e);
+                        toc_item_reading_started = true;
+                    }
+                }
+                Event::Text(e) => {
+                    toc_item_label = e.unescape().unwrap().to_string();
+                    println!("{:?}", toc_item_label);
+                }
+                Event::End(e) => {
+                    if !toc_item_reading_started {
+                        continue;
+                    }
+
+                    if !is_inside_toc_nav {
+                        break;
+                    }
+
+                    let toc_item = TableOfContentsItem {
+                        href: toc_item_href,
+                        label: toc_item_label,
+                    };
+
+                    toc_items.push(toc_item);
+                    toc_item_href = "".to_string();
+                    toc_item_label = "".to_string();
+                    toc_item_reading_started = false;
+                }
+                Event::Eof => break,
+                _ => {}
+            }
+            buf.clear();
+        }
+
+        TableOfContents { items: toc_items }
     }
 }
 
@@ -88,6 +129,7 @@ impl Book {
     }
 
     fn parse_container(zip: &mut ZipArchive<File>) -> Result<String, Box<dyn std::error::Error>> {
+        //TODO: Check whether that should be dynamic of is it a standard for EPUBs
         let mut container_file = zip.by_name("META-INF/container.xml")?;
         let mut contents = String::new();
         container_file.read_to_string(&mut contents)?;
@@ -100,12 +142,12 @@ impl Book {
 
         // Find the OPF file path in the container XML
         let mut opf_path = String::new();
+
         loop {
             match reader.read_event_into(&mut buf) {
                 Err(e) => panic!("Error at position {}: {:?}", reader.buffer_position(), e),
                 Ok(Event::Eof) => break,
                 Ok(Event::Start(e) | Event::Empty(e)) => {
-                    println!("{:?}", e);
                     if let b"rootfile" = e.name().as_ref() {
                         for attribute in e.attributes() {
                             let attr = attribute?;
@@ -123,10 +165,8 @@ impl Book {
         }
 
         if opf_path.is_empty() {
-            println!("ERR");
             Err("OPF file not found".into())
         } else {
-            println!("OK");
             Ok(opf_path)
         }
     }
@@ -136,42 +176,64 @@ impl Book {
         zip: &mut ZipArchive<File>,
         opf_path: &str,
     ) -> Result<Book, Box<dyn std::error::Error>> {
-        let opf_content = Book::get_opf_content(zip, opf_path).unwrap_or_else(|err| {
+        let opf_content = Book::get_archive_file_content(zip, opf_path).unwrap_or_else(|err| {
             eprintln!("{:?}", err);
             "NONE".to_string()
         });
 
-        let book = Book::create_from_opf(&opf_content);
-        println!("{:?}", opf_content);
+        let content_dir = std::path::Path::new(opf_path).parent().unwrap().to_owned();
 
-        Ok(book)
+        let (manifest, spine, metadata) = Book::create_from_opf(&opf_content);
+
+        let table_of_contents =
+            Book::create_table_of_contents(zip, &manifest, content_dir.borrow());
+
+        Ok(Book {
+            manifest,
+            spine,
+            metadata,
+            table_of_contents,
+            _content_dir: content_dir,
+        })
     }
 
-    fn get_opf_content(
+    fn create_table_of_contents(
         zip: &mut ZipArchive<File>,
-        opf_path: &str,
+        manifest: &BookManifest,
+        content_dir: &Path,
+    ) -> TableOfContents {
+        // todo!("Href here is not absolute, it is relative to opf file. This needs to be addressed.");
+        let table_of_contents_from_manifest = manifest.search_for_item("toc").unwrap();
+        println!("{:?}", table_of_contents_from_manifest);
+
+        let toc_path = content_dir.join(table_of_contents_from_manifest.href.clone());
+
+        let toc_content = Book::get_archive_file_content(zip, toc_path.to_str().unwrap())
+            .unwrap_or_else(|err| {
+                eprintln!("{:?}", err);
+                "NONE".to_string()
+            });
+
+        TableOfContents::from_content(toc_content)
+    }
+
+    fn get_archive_file_content(
+        zip: &mut ZipArchive<File>,
+        resource_path: &str,
     ) -> Result<String, Box<dyn std::error::Error>> {
-        let mut opf_file = zip.by_name(opf_path)?;
+        let mut opf_file = zip.by_name(resource_path)?;
         let mut contents = String::new();
         opf_file.read_to_string(&mut contents)?;
 
         Ok(contents)
     }
 
-    pub fn create_from_opf(opf_content: &String) -> Book {
+    fn create_from_opf(opf_content: &String) -> (BookManifest, BookSpine, BookMetadata) {
         let manifest = BookManifest::from_opf(opf_content);
         let metadata = BookMetadata::from_opf(opf_content);
         let spine = BookSpine::from_opf_and_manifest(opf_content, manifest.borrow());
 
-        let table_of_contents_from_manifest = manifest.search_for_item("toc").unwrap();
-        // let table_of_contents = TableOfContents::from_href(table_of_contents_from_manifest.href);
-
-        Book {
-            metadata,
-            spine,
-            manifest,
-            // table_of_contents,
-        }
+        (manifest, spine, metadata)
     }
 }
 
@@ -191,6 +253,13 @@ mod book_tests {
 
         assert!(opf_path.is_ok());
         assert_eq!(opf_path.unwrap(), "OPS/package.opf")
+    }
+
+    #[test]
+    fn read_epub_should_detect_content_directory() {
+        let book = Book::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+
+        assert_eq!(book._content_dir.to_str().unwrap(), "OPS");
     }
 
     #[test]
@@ -280,11 +349,7 @@ mod manifest_tests {
 
     #[test]
     fn search_for_item_should_return_matching_item_when_queried() {
-        let epub_file = File::open("./data/moby-dick.epub").unwrap();
-        let mut archive = ZipArchive::new(epub_file).unwrap();
-
-        let opf_path = Book::parse_container(&mut archive).unwrap();
-        let book = Book::parse_opf(&mut archive, &opf_path).unwrap();
+        let book = Book::read_epub("./data/moby-dick.epub".to_string()).unwrap();
 
         let manifest = book.manifest;
 
@@ -295,5 +360,33 @@ mod manifest_tests {
         assert_eq!(toc_from_manifest.id, "toc");
         assert_eq!(toc_from_manifest.href, "toc.xhtml");
         assert_eq!(toc_from_manifest.media_type, "application/xhtml+xml");
+    }
+}
+
+#[cfg(test)]
+mod table_of_contents_tests {
+    use super::*;
+
+    #[test]
+    fn search_for_item_should_return_matching_item_when_queried() {
+        let book = Book::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+
+        let table_of_contents = book.table_of_contents;
+
+        let toc_length = table_of_contents.items.len();
+
+        assert_eq!(toc_length, 141);
+
+        assert_eq!(table_of_contents.items[0].href, "titlepage.xhtml");
+        assert_eq!(table_of_contents.items[0].label, "Moby-Dick");
+
+        assert_eq!(
+            table_of_contents.items[toc_length - 3].href,
+            "chapter_135.xhtml"
+        );
+        assert_eq!(
+            table_of_contents.items[toc_length - 3].label,
+            "Chapter 135. The Chase.—Third Day."
+        );
     }
 }

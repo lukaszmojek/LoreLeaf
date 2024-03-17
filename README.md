@@ -52,5 +52,7 @@ Since from all of those, the one that is giving the most freedom is **Bevy**, I 
     - [x] Extract metadata
     - [x] Extract spine
     - [x] Extract manifest
-    - [ ] Check whether it would be easier to rely on toc and toc-short for navigation (and if they exist in all epubs)
     - [x] Bundle spine and manifest items together for easy navigation
+    - [ ] RESEARCH
+      - [ ] Check whether it would be easier to rely on toc and toc-short for navigation (and if they exist in all epubs)
+      - [ ] Check whether `META-INF/container.xml` is always present or should container be searched for in other places
