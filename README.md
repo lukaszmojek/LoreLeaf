@@ -2,7 +2,7 @@
 
 What you would call a ebook reading app. But better. 'Loreful' if you will.
 
-![LoreLeaf_logo](logo_320.jpeg)
+![LoreLeaf_logo](./assets/logo_320.jpeg)
 
 ## The why
 
@@ -47,12 +47,15 @@ Since from all of those, the one that is giving the most freedom is **Bevy**, I 
 
 ### Task list
 
+- [ ] UI
+  - [ ] Display user books - thumbnails of cover and title
 - [ ] Epub
   - [ ] Parse container
     - [x] Extract metadata
     - [x] Extract spine
     - [x] Extract manifest
     - [x] Bundle spine and manifest items together for easy navigation
+    - [ ] Get chapter content by passing chapter id
     - [ ] RESEARCH
       - [ ] Check whether it would be easier to rely on toc and toc-short for navigation (and if they exist in all epubs)
       - [ ] Check whether `META-INF/container.xml` is always present or should container be searched for in other places
