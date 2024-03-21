@@ -1,9 +1,11 @@
 use bevy::prelude::*;
+use ui::screens::LoreLeafState;
 
 const LORE_LEAF_TITLE: &str = "LoreLeaf";
 
 pub fn start_app() {
     App::new()
+        .init_state::<LoreLeafState>()
         .add_systems(Startup, setup)
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {

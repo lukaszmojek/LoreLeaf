@@ -15,8 +15,7 @@ pub mod splash {
 
     impl Plugin for SplashPlugin {
         fn build(&self, app: &mut App) {
-            app.init_state::<LoreLeafState>()
-                .add_systems(OnEnter(LoreLeafState::Splash), home_setup)
+            app.add_systems(OnEnter(LoreLeafState::Splash), home_setup)
                 .add_systems(Update, countdown.run_if(in_state(LoreLeafState::Splash)))
                 .add_systems(
                     OnExit(LoreLeafState::Splash),
@@ -109,7 +108,7 @@ pub mod home {
             app.init_state::<NavigationState>()
                 .add_systems(OnEnter(NavigationState::Library), menu_setup)
                 .add_systems(OnEnter(LoreLeafState::Home), home_setup)
-                .add_systems(Update, countdown.run_if(in_state(LoreLeafState::Home)))
+                // .add_systems(Update, countdown.run_if(in_state(LoreLeafState::Home)))
                 .add_systems(OnExit(LoreLeafState::Home), despawn_screen::<OnHomeScreen>)
                 .init_state::<MenuState>()
                 .add_systems(OnEnter(MenuState::Main), main_menu_setup);
@@ -137,41 +136,19 @@ pub mod home {
     struct HomeTimer(Timer);
 
     fn home_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-        commands
-            .spawn((
-                NodeBundle {
-                    style: Style {
-                        align_items: AlignItems::Center,
-                        justify_content: JustifyContent::Center,
-                        width: Val::Percent(100.0),
-                        height: Val::Percent(100.0),
-                        ..default()
-                    },
+        commands.spawn((
+            NodeBundle {
+                style: Style {
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
                     ..default()
                 },
-                OnHomeScreen,
-            ))
-            .with_children(|parent| {
-                parent.spawn(ImageBundle {
-                    style: Style {
-                        // This will set the logo to be 200px wide, and auto adjust its height
-                        width: Val::Px(512.0),
-                        ..default()
-                    },
-                    ..default()
-                });
-            });
-        // Insert the timer as a resource
-        commands.insert_resource(HomeTimer(Timer::from_seconds(1.0, TimerMode::Once)));
-    }
-
-    // Tick the timer, and change state when finished
-    fn countdown(
-        mut game_state: ResMut<NextState<LoreLeafState>>,
-        time: Res<Time>,
-        mut timer: ResMut<HomeTimer>,
-    ) {
-        println!("in HOME")
+                ..default()
+            },
+            OnHomeScreen,
+        ));
     }
 
     fn menu_setup(mut menu_state: ResMut<NextState<MenuState>>) {
