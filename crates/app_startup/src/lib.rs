@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, winit::WinitSettings};
 use ui::screens::LoreLeafState;
 
 const LORE_LEAF_TITLE: &str = "LoreLeaf";
@@ -6,6 +6,8 @@ const LORE_LEAF_TITLE: &str = "LoreLeaf";
 pub fn start_app() {
     App::new()
         .init_state::<LoreLeafState>()
+        // Only run the app when there is user input. This will significantly reduce CPU/GPU use.
+        .insert_resource(WinitSettings::desktop_app())
         .add_systems(Startup, setup)
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
