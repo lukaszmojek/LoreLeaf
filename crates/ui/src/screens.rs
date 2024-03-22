@@ -15,7 +15,7 @@ pub mod splash {
 
     impl Plugin for SplashPlugin {
         fn build(&self, app: &mut App) {
-            app.add_systems(OnEnter(LoreLeafState::Splash), home_setup)
+            app.add_systems(OnEnter(LoreLeafState::Splash), splash_setup)
                 .add_systems(Update, countdown.run_if(in_state(LoreLeafState::Splash)))
                 .add_systems(
                     OnExit(LoreLeafState::Splash),
@@ -32,7 +32,7 @@ pub mod splash {
     #[derive(Resource, Deref, DerefMut)]
     struct SplashTimer(Timer);
 
-    fn home_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+    fn splash_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         let icon = asset_server.load("logo_1024.png");
 
         commands
@@ -62,7 +62,7 @@ pub mod splash {
             });
 
         // Insert the timer as a resource
-        commands.insert_resource(SplashTimer(Timer::from_seconds(1.0, TimerMode::Once)));
+        commands.insert_resource(SplashTimer(Timer::from_seconds(0.5, TimerMode::Once)));
     }
 
     // Tick the timer, and change state when finished
@@ -78,8 +78,8 @@ pub mod splash {
 }
 
 pub mod home {
-    use super::{despawn_screen, LoreLeafState, TEXT_COLOR};
-    use bevy::prelude::*;
+    use super::{button_system, despawn_screen, LoreLeafState, NORMAL_BUTTON, TEXT_COLOR};
+    use bevy::{app::AppExit, prelude::*};
 
     pub struct HomePlugin;
 
@@ -106,12 +106,16 @@ pub mod home {
     impl Plugin for HomePlugin {
         fn build(&self, app: &mut App) {
             app.init_state::<NavigationState>()
-                .add_systems(OnEnter(NavigationState::Library), menu_setup)
                 .add_systems(OnEnter(LoreLeafState::Home), home_setup)
-                // .add_systems(Update, countdown.run_if(in_state(LoreLeafState::Home)))
                 .add_systems(OnExit(LoreLeafState::Home), despawn_screen::<OnHomeScreen>)
+                // .add_systems(OnEnter(NavigationState::Library), home_setup)
+                // .add_systems(Update, countdown.run_if(in_state(LoreLeafState::Home)))
                 .init_state::<MenuState>()
-                .add_systems(OnEnter(MenuState::Main), main_menu_setup);
+                .add_systems(OnEnter(MenuState::Main), main_menu_setup)
+                .add_systems(
+                    Update,
+                    (navigation_action, button_system).run_if(in_state(LoreLeafState::Home)),
+                );
         }
     }
 
@@ -122,36 +126,16 @@ pub mod home {
     // All actions that can be triggered from a button click
     #[derive(Component)]
     enum MenuButtonAction {
-        Play,
-        Settings,
-        SettingsDisplay,
-        SettingsSound,
-        BackToMainMenu,
-        BackToSettings,
-        Quit,
+        Library,
+        Reader,
+        LoreExplorer,
     }
 
     // Newtype to use a `Timer` for this screen as a resource
     #[derive(Resource, Deref, DerefMut)]
     struct HomeTimer(Timer);
 
-    fn home_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-        commands.spawn((
-            NodeBundle {
-                style: Style {
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
-                    ..default()
-                },
-                ..default()
-            },
-            OnHomeScreen,
-        ));
-    }
-
-    fn menu_setup(mut menu_state: ResMut<NextState<MenuState>>) {
+    fn home_setup(mut menu_state: ResMut<NextState<MenuState>>) {
         menu_state.set(MenuState::Main);
     }
 
@@ -163,8 +147,10 @@ pub mod home {
             margin: UiRect::all(Val::Px(20.0)),
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
+            border: UiRect::all(Val::Px(5.0)),
             ..default()
         };
+
         let button_icon_style = Style {
             width: Val::Px(30.0),
             // This takes the icons out of the flexbox flow, to be positioned exactly
@@ -222,39 +208,96 @@ pub mod home {
                             }),
                         );
 
-                        // Display three buttons for each action available from the main menu:
-                        // - new game
-                        // - settings
-                        // - quit
                         parent
                             .spawn((
                                 ButtonBundle {
                                     style: button_style.clone(),
-                                    // image: UiImage::default().with_color(NORMAL_BUTTON),
+                                    border_color: BorderColor(Color::BLACK),
                                     ..default()
                                 },
-                                MenuButtonAction::Play,
+                                MenuButtonAction::Library,
                             ))
                             .with_children(|parent| {
-                                let icon = asset_server.load("textures/Game Icons/right.png");
                                 parent.spawn(ImageBundle {
                                     style: button_icon_style.clone(),
-                                    image: UiImage::new(icon),
                                     ..default()
                                 });
                                 parent.spawn(TextBundle::from_section(
-                                    "New Game",
+                                    "Library",
+                                    button_text_style.clone(),
+                                ));
+                            });
+
+                        parent
+                            .spawn((
+                                ButtonBundle {
+                                    style: button_style.clone(),
+                                    border_color: BorderColor(Color::BLACK),
+                                    ..default()
+                                },
+                                MenuButtonAction::Reader,
+                            ))
+                            .with_children(|parent| {
+                                parent.spawn(ImageBundle {
+                                    style: button_icon_style.clone(),
+                                    ..default()
+                                });
+                                parent.spawn(TextBundle::from_section(
+                                    "Reader",
+                                    button_text_style.clone(),
+                                ));
+                            });
+
+                        parent
+                            .spawn((
+                                ButtonBundle {
+                                    style: button_style.clone(),
+                                    border_color: BorderColor(Color::BLACK),
+                                    ..default()
+                                },
+                                MenuButtonAction::LoreExplorer,
+                            ))
+                            .with_children(|parent| {
+                                parent.spawn(ImageBundle {
+                                    style: button_icon_style.clone(),
+                                    ..default()
+                                });
+                                parent.spawn(TextBundle::from_section(
+                                    "Lore",
                                     button_text_style.clone(),
                                 ));
                             });
                     });
             });
     }
-}
 
-// Tag component used to mark which setting is currently selected
-#[derive(Component)]
-struct SelectedOption;
+    fn navigation_action(
+        interaction_query: Query<
+            (&Interaction, &MenuButtonAction),
+            (Changed<Interaction>, With<Button>),
+        >,
+        mut menu_state: ResMut<NextState<MenuState>>,
+        mut navigation_state: ResMut<NextState<NavigationState>>,
+    ) {
+        // println!("navigation_action");
+        for (interaction, menu_button_action) in &interaction_query {
+            if *interaction == Interaction::Pressed {
+                match menu_button_action {
+                    MenuButtonAction::Library => {
+                        navigation_state.set(NavigationState::Library);
+                        menu_state.set(MenuState::Main);
+                    }
+                    MenuButtonAction::Reader => {
+                        navigation_state.set(NavigationState::Reader);
+                    }
+                    MenuButtonAction::LoreExplorer => {
+                        navigation_state.set(NavigationState::LoreExplorer);
+                    }
+                }
+            }
+        }
+    }
+}
 
 const TEXT_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
 
@@ -266,16 +309,21 @@ const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
 // This system handles changing all buttons color based on mouse interaction
 fn button_system(
     mut interaction_query: Query<
-        (&Interaction, &mut Sprite, Option<&SelectedOption>),
+        (&Interaction, &mut UiImage, &mut BorderColor, &Children),
         (Changed<Interaction>, With<Button>),
     >,
+    mut text_query: Query<&mut Text>,
 ) {
-    for (interaction, mut image, selected) in &mut interaction_query {
-        image.color = match (*interaction, selected) {
-            (Interaction::Pressed, _) | (Interaction::None, Some(_)) => PRESSED_BUTTON,
-            (Interaction::Hovered, Some(_)) => HOVERED_PRESSED_BUTTON,
-            (Interaction::Hovered, None) => HOVERED_BUTTON,
-            (Interaction::None, None) => NORMAL_BUTTON,
+    // println!("{:?}", interaction_query);
+
+    for (interaction, mut image, mut border_color, children) in &mut interaction_query {
+        println!("{:?}", interaction);
+
+        border_color.0 = match *interaction {
+            Interaction::Pressed => PRESSED_BUTTON,
+            Interaction::Hovered => HOVERED_PRESSED_BUTTON,
+            // Interaction::Hovered => HOVERED_BUTTON,
+            Interaction::None => NORMAL_BUTTON,
         }
     }
 }
