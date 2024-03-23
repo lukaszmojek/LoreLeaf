@@ -24,11 +24,9 @@ pub mod splash {
         }
     }
 
-    // Tag component used to tag entities added on the splash screen
     #[derive(Component)]
     struct OnSplashScreen;
 
-    // Newtype to use a `Timer` for this screen as a resource
     #[derive(Resource, Deref, DerefMut)]
     struct SplashTimer(Timer);
 
@@ -52,7 +50,6 @@ pub mod splash {
             .with_children(|parent| {
                 parent.spawn(ImageBundle {
                     style: Style {
-                        // This will set the logo to be 200px wide, and auto adjust its height
                         width: Val::Px(512.0),
                         ..default()
                     },
@@ -61,11 +58,9 @@ pub mod splash {
                 });
             });
 
-        // Insert the timer as a resource
         commands.insert_resource(SplashTimer(Timer::from_seconds(0.5, TimerMode::Once)));
     }
 
-    // Tick the timer, and change state when finished
     fn countdown(
         mut game_state: ResMut<NextState<LoreLeafState>>,
         time: Res<Time>,
@@ -78,7 +73,9 @@ pub mod splash {
 }
 
 pub mod home {
-    use super::{button_system, despawn_screen, LoreLeafState, NORMAL_BUTTON, TEXT_COLOR};
+    use crate::buttons::{button_system, ButtonConfiguration};
+
+    use super::{despawn_screen, LoreLeafState, TEXT_COLOR};
     use bevy::{app::AppExit, prelude::*};
 
     pub struct HomePlugin;
@@ -119,11 +116,9 @@ pub mod home {
         }
     }
 
-    // Tag component used to tag entities added on the home screen
     #[derive(Component)]
     struct OnHomeScreen;
 
-    // All actions that can be triggered from a button click
     #[derive(Component)]
     enum MenuButtonAction {
         Library,
@@ -131,7 +126,6 @@ pub mod home {
         LoreExplorer,
     }
 
-    // Newtype to use a `Timer` for this screen as a resource
     #[derive(Resource, Deref, DerefMut)]
     struct HomeTimer(Timer);
 
@@ -140,31 +134,6 @@ pub mod home {
     }
 
     fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-        // Common style for all buttons on the screen
-        let button_style = Style {
-            width: Val::Px(250.0),
-            height: Val::Px(65.0),
-            margin: UiRect::all(Val::Px(20.0)),
-            justify_content: JustifyContent::Center,
-            align_items: AlignItems::Center,
-            border: UiRect::all(Val::Px(5.0)),
-            ..default()
-        };
-
-        let button_icon_style = Style {
-            width: Val::Px(30.0),
-            // This takes the icons out of the flexbox flow, to be positioned exactly
-            position_type: PositionType::Absolute,
-            // The icon will be close to the left border of the button
-            left: Val::Px(10.0),
-            ..default()
-        };
-        let button_text_style = TextStyle {
-            font_size: 40.0,
-            color: TEXT_COLOR,
-            ..default()
-        };
-
         commands
             .spawn((
                 NodeBundle {
@@ -211,7 +180,7 @@ pub mod home {
                         parent
                             .spawn((
                                 ButtonBundle {
-                                    style: button_style.clone(),
+                                    style: ButtonConfiguration::instance().style.clone(),
                                     border_color: BorderColor(Color::BLACK),
                                     ..default()
                                 },
@@ -219,19 +188,19 @@ pub mod home {
                             ))
                             .with_children(|parent| {
                                 parent.spawn(ImageBundle {
-                                    style: button_icon_style.clone(),
+                                    style: ButtonConfiguration::instance().icon_style.clone(),
                                     ..default()
                                 });
                                 parent.spawn(TextBundle::from_section(
                                     "Library",
-                                    button_text_style.clone(),
+                                    ButtonConfiguration::instance().text_style.clone(),
                                 ));
                             });
 
                         parent
                             .spawn((
                                 ButtonBundle {
-                                    style: button_style.clone(),
+                                    style: ButtonConfiguration::instance().style.clone(),
                                     border_color: BorderColor(Color::BLACK),
                                     ..default()
                                 },
@@ -239,19 +208,19 @@ pub mod home {
                             ))
                             .with_children(|parent| {
                                 parent.spawn(ImageBundle {
-                                    style: button_icon_style.clone(),
+                                    style: ButtonConfiguration::instance().icon_style.clone(),
                                     ..default()
                                 });
                                 parent.spawn(TextBundle::from_section(
                                     "Reader",
-                                    button_text_style.clone(),
+                                    ButtonConfiguration::instance().text_style.clone(),
                                 ));
                             });
 
                         parent
                             .spawn((
                                 ButtonBundle {
-                                    style: button_style.clone(),
+                                    style: ButtonConfiguration::instance().style.clone(),
                                     border_color: BorderColor(Color::BLACK),
                                     ..default()
                                 },
@@ -259,12 +228,12 @@ pub mod home {
                             ))
                             .with_children(|parent| {
                                 parent.spawn(ImageBundle {
-                                    style: button_icon_style.clone(),
+                                    style: ButtonConfiguration::instance().icon_style.clone(),
                                     ..default()
                                 });
                                 parent.spawn(TextBundle::from_section(
                                     "Lore",
-                                    button_text_style.clone(),
+                                    ButtonConfiguration::instance().text_style.clone(),
                                 ));
                             });
                     });
@@ -300,33 +269,6 @@ pub mod home {
 }
 
 const TEXT_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
-
-const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
-const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
-const HOVERED_PRESSED_BUTTON: Color = Color::rgb(0.25, 0.65, 0.25);
-const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
-
-// This system handles changing all buttons color based on mouse interaction
-fn button_system(
-    mut interaction_query: Query<
-        (&Interaction, &mut UiImage, &mut BorderColor, &Children),
-        (Changed<Interaction>, With<Button>),
-    >,
-    mut text_query: Query<&mut Text>,
-) {
-    // println!("{:?}", interaction_query);
-
-    for (interaction, mut image, mut border_color, children) in &mut interaction_query {
-        println!("{:?}", interaction);
-
-        border_color.0 = match *interaction {
-            Interaction::Pressed => PRESSED_BUTTON,
-            Interaction::Hovered => HOVERED_PRESSED_BUTTON,
-            // Interaction::Hovered => HOVERED_BUTTON,
-            Interaction::None => NORMAL_BUTTON,
-        }
-    }
-}
 
 // Generic system that takes a component as a parameter, and will despawn all entities with that component
 fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {

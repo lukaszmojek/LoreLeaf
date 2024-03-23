@@ -1,5 +1,7 @@
 pub mod book_listing;
+mod buttons;
 pub mod screens;
+mod text;
 
 use screens::{home, splash};
 
