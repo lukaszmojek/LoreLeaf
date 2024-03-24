@@ -140,8 +140,8 @@ pub mod home {
                     style: Style {
                         width: Val::Percent(100.0),
                         height: Val::Percent(100.0),
-                        align_items: AlignItems::Center,
-                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Start,
+                        justify_content: JustifyContent::Start,
                         ..default()
                     },
                     ..default()
@@ -155,88 +155,44 @@ pub mod home {
                         style: Style {
                             flex_direction: FlexDirection::Column,
                             align_items: AlignItems::Center,
+                            width: Val::Percent(10.0),
+                            height: Val::Percent(100.0),
                             ..default()
                         },
                         background_color: BackgroundColor::from(Color::CRIMSON),
                         ..default()
                     })
                     .with_children(|parent| {
-                        // Display the game name
-                        parent.spawn(
-                            TextBundle::from_section(
-                                "Nav",
-                                TextStyle {
-                                    font_size: 80.0,
-                                    color: TEXT_COLOR,
-                                    ..default()
-                                },
-                            )
-                            .with_style(Style {
-                                margin: UiRect::all(Val::Px(50.0)),
-                                ..default()
-                            }),
-                        );
-
-                        parent
-                            .spawn((
-                                ButtonBundle {
-                                    style: ButtonConfiguration::instance().style.clone(),
-                                    border_color: BorderColor(Color::BLACK),
-                                    ..default()
-                                },
-                                MenuButtonAction::Library,
-                            ))
-                            .with_children(|parent| {
-                                parent.spawn(ImageBundle {
-                                    style: ButtonConfiguration::instance().icon_style.clone(),
-                                    ..default()
-                                });
-                                parent.spawn(TextBundle::from_section(
-                                    "Library",
-                                    ButtonConfiguration::instance().text_style.clone(),
-                                ));
-                            });
-
-                        parent
-                            .spawn((
-                                ButtonBundle {
-                                    style: ButtonConfiguration::instance().style.clone(),
-                                    border_color: BorderColor(Color::BLACK),
-                                    ..default()
-                                },
-                                MenuButtonAction::Reader,
-                            ))
-                            .with_children(|parent| {
-                                parent.spawn(ImageBundle {
-                                    style: ButtonConfiguration::instance().icon_style.clone(),
-                                    ..default()
-                                });
-                                parent.spawn(TextBundle::from_section(
-                                    "Reader",
-                                    ButtonConfiguration::instance().text_style.clone(),
-                                ));
-                            });
-
-                        parent
-                            .spawn((
-                                ButtonBundle {
-                                    style: ButtonConfiguration::instance().style.clone(),
-                                    border_color: BorderColor(Color::BLACK),
-                                    ..default()
-                                },
-                                MenuButtonAction::LoreExplorer,
-                            ))
-                            .with_children(|parent| {
-                                parent.spawn(ImageBundle {
-                                    style: ButtonConfiguration::instance().icon_style.clone(),
-                                    ..default()
-                                });
-                                parent.spawn(TextBundle::from_section(
-                                    "Lore",
-                                    ButtonConfiguration::instance().text_style.clone(),
-                                ));
-                            });
+                        spawn_button(parent, "Library", MenuButtonAction::Library);
+                        spawn_button(parent, "Reader", MenuButtonAction::Reader);
+                        spawn_button(parent, "Lore", MenuButtonAction::LoreExplorer);
                     });
+            });
+    }
+
+    fn spawn_button(
+        parent: &mut ChildBuilder<'_>,
+        button_text: &str,
+        button_action: MenuButtonAction,
+    ) {
+        parent
+            .spawn((
+                ButtonBundle {
+                    style: ButtonConfiguration::instance().style.clone(),
+                    border_color: BorderColor(Color::BLACK),
+                    ..default()
+                },
+                button_action,
+            ))
+            .with_children(|parent| {
+                parent.spawn(ImageBundle {
+                    style: ButtonConfiguration::instance().icon_style.clone(),
+                    ..default()
+                });
+                parent.spawn(TextBundle::from_section(
+                    button_text,
+                    ButtonConfiguration::instance().text_style.clone(),
+                ));
             });
     }
 
@@ -248,7 +204,6 @@ pub mod home {
         mut menu_state: ResMut<NextState<MenuState>>,
         mut navigation_state: ResMut<NextState<NavigationState>>,
     ) {
-        // println!("navigation_action");
         for (interaction, menu_button_action) in &interaction_query {
             if *interaction == Interaction::Pressed {
                 match menu_button_action {
