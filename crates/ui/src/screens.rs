@@ -84,6 +84,7 @@ pub mod home {
     #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
     pub enum NavigationState {
         #[default]
+        Home,
         Library,
         Reader,
         LoreExplorer,
@@ -121,6 +122,7 @@ pub mod home {
 
     #[derive(Component)]
     enum MenuButtonAction {
+        Home,
         Library,
         Reader,
         LoreExplorer,
@@ -156,6 +158,7 @@ pub mod home {
                             flex_direction: FlexDirection::Column,
                             align_items: AlignItems::Center,
                             width: Val::Percent(10.0),
+                            max_width: Val::Px(74.0),
                             height: Val::Percent(100.0),
                             ..default()
                         },
@@ -163,16 +166,28 @@ pub mod home {
                         ..default()
                     })
                     .with_children(|parent| {
-                        spawn_button(parent, "Library", MenuButtonAction::Library);
-                        spawn_button(parent, "Reader", MenuButtonAction::Reader);
-                        spawn_button(parent, "Lore", MenuButtonAction::LoreExplorer);
+                        spawn_button(parent, &asset_server, "home", MenuButtonAction::Home);
+                        spawn_button(parent, &asset_server, "library", MenuButtonAction::Library);
+                        spawn_button(
+                            parent,
+                            &asset_server,
+                            "eyeglasses",
+                            MenuButtonAction::Reader,
+                        );
+                        spawn_button(
+                            parent,
+                            &asset_server,
+                            "explore", //lore
+                            MenuButtonAction::LoreExplorer,
+                        );
                     });
             });
     }
 
     fn spawn_button(
         parent: &mut ChildBuilder<'_>,
-        button_text: &str,
+        asset_server: &Res<AssetServer>,
+        icon_name: &str,
         button_action: MenuButtonAction,
     ) {
         parent
@@ -185,14 +200,12 @@ pub mod home {
                 button_action,
             ))
             .with_children(|parent| {
+                let icon: Handle<Image> = asset_server.load(format!("menu/{}.png", icon_name));
                 parent.spawn(ImageBundle {
                     style: ButtonConfiguration::instance().icon_style.clone(),
+                    image: UiImage::new(icon),
                     ..default()
                 });
-                parent.spawn(TextBundle::from_section(
-                    button_text,
-                    ButtonConfiguration::instance().text_style.clone(),
-                ));
             });
     }
 
@@ -207,6 +220,10 @@ pub mod home {
         for (interaction, menu_button_action) in &interaction_query {
             if *interaction == Interaction::Pressed {
                 match menu_button_action {
+                    MenuButtonAction::Home => {
+                        navigation_state.set(NavigationState::Library);
+                        menu_state.set(MenuState::Main);
+                    }
                     MenuButtonAction::Library => {
                         navigation_state.set(NavigationState::Library);
                         menu_state.set(MenuState::Main);
@@ -217,6 +234,7 @@ pub mod home {
                     MenuButtonAction::LoreExplorer => {
                         navigation_state.set(NavigationState::LoreExplorer);
                     }
+                    _ => panic!("Unknown menu button action",),
                 }
             }
         }

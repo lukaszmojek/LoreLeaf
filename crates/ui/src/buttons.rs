@@ -18,16 +18,16 @@ impl ButtonConfiguration {
     pub fn instance() -> Self {
         ButtonConfiguration {
             style: Style {
-                width: Val::Px(250.0),
-                height: Val::Px(65.0),
-                margin: UiRect::all(Val::Px(20.0)),
+                width: Val::Px(54.0),
+                height: Val::Px(54.0),
+                margin: UiRect::all(Val::Px(10.0)),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
                 border: UiRect::all(Val::Px(5.0)),
                 ..default()
             },
             icon_style: Style {
-                width: Val::Px(30.0),
+                width: Val::Px(24.0),
                 // This takes the icons out of the flexbox flow, to be positioned exactly
                 position_type: PositionType::Absolute,
                 // The icon will be close to the left border of the button
