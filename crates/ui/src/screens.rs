@@ -73,10 +73,13 @@ pub mod splash {
 }
 
 pub mod home {
-    use crate::buttons::{button_system, ButtonConfiguration};
+    use crate::{
+        buttons::{button_system, ButtonConfiguration},
+        text::TEXT_COLOR,
+    };
 
-    use super::{despawn_screen, LoreLeafState, TEXT_COLOR};
-    use bevy::{app::AppExit, prelude::*};
+    use super::{despawn_screen, LoreLeafState};
+    use bevy::prelude::*;
 
     pub struct HomePlugin;
 
@@ -90,29 +93,24 @@ pub mod home {
         LoreExplorer,
     }
 
-    // State used for the current menu screen
-    #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
-    enum MenuState {
-        Main,
-        Settings,
-        SettingsDisplay,
-        SettingsSound,
-        #[default]
-        Disabled,
-    }
-
     impl Plugin for HomePlugin {
         fn build(&self, app: &mut App) {
             app.init_state::<NavigationState>()
-                .add_systems(OnEnter(LoreLeafState::Home), home_setup)
-                .add_systems(OnExit(LoreLeafState::Home), despawn_screen::<OnHomeScreen>)
-                // .add_systems(OnEnter(NavigationState::Library), home_setup)
-                // .add_systems(Update, countdown.run_if(in_state(LoreLeafState::Home)))
-                .init_state::<MenuState>()
-                .add_systems(OnEnter(MenuState::Main), main_menu_setup)
+                .add_systems(OnEnter(LoreLeafState::Home), home_navigation_setup)
                 .add_systems(
                     Update,
                     (navigation_action, button_system).run_if(in_state(LoreLeafState::Home)),
+                )
+                .add_systems(OnExit(LoreLeafState::Home), despawn_screen::<OnHomeScreen>) //TODO: List all possible navigation states?
+                .add_systems(OnEnter(NavigationState::Home), home_setup)
+                .add_systems(
+                    OnExit(NavigationState::Home),
+                    despawn_screen::<OnHomeScreen>,
+                )
+                .add_systems(OnEnter(NavigationState::Library), library_setup)
+                .add_systems(
+                    OnExit(NavigationState::Library),
+                    despawn_screen::<OnLibraryScreen>,
                 );
         }
     }
@@ -121,7 +119,19 @@ pub mod home {
     struct OnHomeScreen;
 
     #[derive(Component)]
-    enum MenuButtonAction {
+    struct OnLibraryScreen;
+
+    #[derive(Component)]
+    struct OnReaderScreen;
+
+    #[derive(Component)]
+    struct OrLoreExplorerScreen;
+
+    #[derive(Component)]
+    struct OnNavibation;
+
+    #[derive(Component)]
+    enum NavigationButtonAction {
         Home,
         Library,
         Reader,
@@ -131,11 +141,75 @@ pub mod home {
     #[derive(Resource, Deref, DerefMut)]
     struct HomeTimer(Timer);
 
-    fn home_setup(mut menu_state: ResMut<NextState<MenuState>>) {
-        menu_state.set(MenuState::Main);
+    fn home_setup(mut commands: Commands) {
+        commands
+            .spawn((
+                NodeBundle {
+                    style: Style {
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
+                        width: Val::Percent(100.0),
+                        height: Val::Percent(100.0),
+                        ..default()
+                    },
+                    ..default()
+                },
+                OnHomeScreen,
+            ))
+            .with_children(|parent| {
+                // Display the game name
+                parent.spawn(
+                    TextBundle::from_section(
+                        "HOME",
+                        TextStyle {
+                            font_size: 80.0,
+                            color: TEXT_COLOR,
+                            ..default()
+                        },
+                    )
+                    .with_style(Style {
+                        margin: UiRect::all(Val::Px(50.0)),
+                        ..default()
+                    }),
+                );
+            });
     }
 
-    fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+    fn library_setup(mut commands: Commands) {
+        commands
+            .spawn((
+                NodeBundle {
+                    style: Style {
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
+                        width: Val::Percent(100.0),
+                        height: Val::Percent(100.0),
+                        ..default()
+                    },
+                    ..default()
+                },
+                OnLibraryScreen,
+            ))
+            .with_children(|parent| {
+                // Display the game name
+                parent.spawn(
+                    TextBundle::from_section(
+                        "LIBRARY",
+                        TextStyle {
+                            font_size: 80.0,
+                            color: TEXT_COLOR,
+                            ..default()
+                        },
+                    )
+                    .with_style(Style {
+                        margin: UiRect::all(Val::Px(50.0)),
+                        ..default()
+                    }),
+                );
+            });
+    }
+
+    fn home_navigation_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         commands
             .spawn((
                 NodeBundle {
@@ -148,8 +222,7 @@ pub mod home {
                     },
                     ..default()
                 },
-                //TODO: Should probably be navigation
-                OnHomeScreen,
+                OnNavibation,
             ))
             .with_children(|parent| {
                 parent
@@ -166,19 +239,24 @@ pub mod home {
                         ..default()
                     })
                     .with_children(|parent| {
-                        spawn_button(parent, &asset_server, "home", MenuButtonAction::Home);
-                        spawn_button(parent, &asset_server, "library", MenuButtonAction::Library);
+                        spawn_button(parent, &asset_server, "home", NavigationButtonAction::Home);
+                        spawn_button(
+                            parent,
+                            &asset_server,
+                            "library",
+                            NavigationButtonAction::Library,
+                        );
                         spawn_button(
                             parent,
                             &asset_server,
                             "eyeglasses",
-                            MenuButtonAction::Reader,
+                            NavigationButtonAction::Reader,
                         );
                         spawn_button(
                             parent,
                             &asset_server,
                             "explore", //lore
-                            MenuButtonAction::LoreExplorer,
+                            NavigationButtonAction::LoreExplorer,
                         );
                     });
             });
@@ -188,7 +266,7 @@ pub mod home {
         parent: &mut ChildBuilder<'_>,
         asset_server: &Res<AssetServer>,
         icon_name: &str,
-        button_action: MenuButtonAction,
+        button_action: NavigationButtonAction,
     ) {
         parent
             .spawn((
@@ -211,40 +289,39 @@ pub mod home {
 
     fn navigation_action(
         interaction_query: Query<
-            (&Interaction, &MenuButtonAction),
+            (&Interaction, &NavigationButtonAction),
             (Changed<Interaction>, With<Button>),
         >,
-        mut menu_state: ResMut<NextState<MenuState>>,
         mut navigation_state: ResMut<NextState<NavigationState>>,
     ) {
         for (interaction, menu_button_action) in &interaction_query {
             if *interaction == Interaction::Pressed {
                 match menu_button_action {
-                    MenuButtonAction::Home => {
-                        navigation_state.set(NavigationState::Library);
-                        menu_state.set(MenuState::Main);
+                    NavigationButtonAction::Home => {
+                        navigation_state.set(NavigationState::Home);
                     }
-                    MenuButtonAction::Library => {
+                    NavigationButtonAction::Library => {
                         navigation_state.set(NavigationState::Library);
-                        menu_state.set(MenuState::Main);
                     }
-                    MenuButtonAction::Reader => {
+                    NavigationButtonAction::Reader => {
                         navigation_state.set(NavigationState::Reader);
                     }
-                    MenuButtonAction::LoreExplorer => {
+                    NavigationButtonAction::LoreExplorer => {
                         navigation_state.set(NavigationState::LoreExplorer);
                     }
-                    _ => panic!("Unknown menu button action",),
+                    _ => panic!("Unknown navigation button action!",),
                 }
             }
         }
+
+        println!("Current navigation state: {:?}", navigation_state);
     }
 }
 
-const TEXT_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
-
 // Generic system that takes a component as a parameter, and will despawn all entities with that component
 fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
+    println!("DESPAWN: {:?}", to_despawn);
+
     for entity in &to_despawn {
         commands.entity(entity).despawn_recursive();
     }
