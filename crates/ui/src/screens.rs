@@ -75,6 +75,7 @@ pub mod splash {
 pub mod home {
     use crate::{
         buttons::{button_system, ButtonConfiguration},
+        library::{library_system},
         text::TEXT_COLOR,
     };
 
@@ -86,11 +87,12 @@ pub mod home {
     // State used for the current menu screen
     #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
     pub enum NavigationState {
-        #[default]
         Home,
         Library,
         Reader,
         LoreExplorer,
+        #[default]
+        Disabled,
     }
 
     impl Plugin for HomePlugin {
@@ -108,6 +110,10 @@ pub mod home {
                     despawn_screen::<OnHomeScreen>,
                 )
                 .add_systems(OnEnter(NavigationState::Library), library_setup)
+                .add_systems(
+                    Update,
+                    (library_system).run_if(in_state(NavigationState::Library)),
+                )
                 .add_systems(
                     OnExit(NavigationState::Library),
                     despawn_screen::<OnLibraryScreen>,
@@ -128,7 +134,7 @@ pub mod home {
     struct OrLoreExplorerScreen;
 
     #[derive(Component)]
-    struct OnNavibation;
+    struct OnNavigation;
 
     #[derive(Component)]
     enum NavigationButtonAction {
@@ -157,7 +163,6 @@ pub mod home {
                 OnHomeScreen,
             ))
             .with_children(|parent| {
-                // Display the game name
                 parent.spawn(
                     TextBundle::from_section(
                         "HOME",
@@ -222,7 +227,7 @@ pub mod home {
                     },
                     ..default()
                 },
-                OnNavibation,
+                OnNavigation,
             ))
             .with_children(|parent| {
                 parent
@@ -313,8 +318,6 @@ pub mod home {
                 }
             }
         }
-
-        println!("Current navigation state: {:?}", navigation_state);
     }
 }
 
