@@ -75,7 +75,7 @@ pub mod splash {
 pub mod home {
     use crate::{
         buttons::{button_system, ButtonConfiguration},
-        library::{library_system},
+        library::{library_system, RefreshLibraryTimer},
         text::TEXT_COLOR,
     };
 
@@ -212,6 +212,11 @@ pub mod home {
                     }),
                 );
             });
+
+        commands.insert_resource(RefreshLibraryTimer(Timer::from_seconds(
+            2.0,
+            TimerMode::Repeating,
+        )))
     }
 
     fn home_navigation_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
