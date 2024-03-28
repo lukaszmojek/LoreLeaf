@@ -1,11 +1,25 @@
 use bevy::prelude::*;
 use directories::UserDirs;
-use std::fs::{self, DirEntry};
+use std::{
+    fs::{self, DirEntry},
+    path::Path,
+};
+
+// const USER_BOOK_DIRECTORY: UserDirs = match UserDirs::new() {
+//     Some(v) => v,
+//     None => panic!("Couldn't load user directories"),
+// };
 
 pub fn library_system(time: Res<Time>, mut timer: ResMut<RefreshLibraryTimer>) {
     if timer.0.tick(time.delta()).just_finished() {
-        let books = get_all_books_from_documents();
-        println!("{:?}", books);
+        //TODO: Take those values from user configuration
+        let user_directories = UserDirs::new().unwrap();
+        let documents = user_directories.document_dir();
+
+        if let Some(path) = documents {
+            let books = get_all_books_from_path(path);
+            println!("{:?}", books);
+        }
     }
 }
 
@@ -14,12 +28,10 @@ pub struct RefreshLibraryTimer(pub Timer);
 
 const BOOK_FORMATS: [&str; 1] = ["epub"];
 
-fn get_all_books_from_documents() -> Vec<DirEntry> {
-    let user_directories = UserDirs::new().unwrap();
-    let documents = user_directories.document_dir();
+fn get_all_books_from_path(path: &Path) -> Vec<DirEntry> {
     let mut found_books: Vec<DirEntry> = vec![];
 
-    match fs::read_dir(documents.unwrap().to_str().unwrap()) {
+    match fs::read_dir(path.to_str().unwrap()) {
         Ok(entries) => {
             found_books = entries
                 .filter_map(|dir_entry| dir_entry.ok())
@@ -40,15 +52,19 @@ fn get_all_books_from_documents() -> Vec<DirEntry> {
 
 #[cfg(test)]
 mod tests {
+    use std::env;
+
     use bevy::render::render_resource::encase::rts_array::Length;
 
     use super::*;
 
     #[test]
     fn test_library_system() {
-        //TODO: Make the path configurable
-        let books = get_all_books_from_documents();
-        println!("{:?}", books);
-        assert_eq!(books.length(), 3);
+        let current_directory = env::current_dir().unwrap();
+        let path = Path::new(current_directory.to_str().unwrap()).join("test_data/");
+
+        let books = get_all_books_from_path(&path);
+
+        assert_eq!(books.length(), 2);
     }
 }
