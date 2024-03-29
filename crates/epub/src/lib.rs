@@ -15,8 +15,8 @@ use zip::ZipArchive;
 
 use crate::metadata::BookMetadata;
 
-struct Book {
-    metadata: BookMetadata,
+pub struct EBook {
+    pub metadata: BookMetadata,
     spine: BookSpine,
     manifest: BookManifest,
     table_of_contents: TableOfContents,
@@ -117,13 +117,13 @@ impl TableOfContents {
     }
 }
 
-impl Book {
-    pub fn read_epub(epub_path: String) -> Result<(Book), Box<dyn std::error::Error>> {
+impl EBook {
+    pub fn read_epub(epub_path: String) -> Result<(EBook), Box<dyn std::error::Error>> {
         let epub_file = File::open(epub_path)?;
         let mut archive = ZipArchive::new(epub_file)?;
 
-        let opf_path = Book::parse_container(&mut archive)?;
-        let book = Book::parse_opf(&mut archive, &opf_path)?;
+        let opf_path = EBook::parse_container(&mut archive)?;
+        let book = EBook::parse_opf(&mut archive, &opf_path)?;
 
         Ok(book)
     }
@@ -175,20 +175,20 @@ impl Book {
     fn parse_opf(
         zip: &mut ZipArchive<File>,
         opf_path: &str,
-    ) -> Result<Book, Box<dyn std::error::Error>> {
-        let opf_content = Book::get_archive_file_content(zip, opf_path).unwrap_or_else(|err| {
+    ) -> Result<EBook, Box<dyn std::error::Error>> {
+        let opf_content = EBook::get_archive_file_content(zip, opf_path).unwrap_or_else(|err| {
             eprintln!("{:?}", err);
             "NONE".to_string()
         });
 
         let content_dir = std::path::Path::new(opf_path).parent().unwrap().to_owned();
 
-        let (manifest, spine, metadata) = Book::create_from_opf(&opf_content);
+        let (manifest, spine, metadata) = EBook::create_from_opf(&opf_content);
 
         let table_of_contents =
-            Book::create_table_of_contents(zip, &manifest, content_dir.borrow());
+            EBook::create_table_of_contents(zip, &manifest, content_dir.borrow());
 
-        Ok(Book {
+        Ok(EBook {
             manifest,
             spine,
             metadata,
@@ -208,7 +208,7 @@ impl Book {
 
         let toc_path = content_dir.join(table_of_contents_from_manifest.href.clone());
 
-        let toc_content = Book::get_archive_file_content(zip, toc_path.to_str().unwrap())
+        let toc_content = EBook::get_archive_file_content(zip, toc_path.to_str().unwrap())
             .unwrap_or_else(|err| {
                 eprintln!("{:?}", err);
                 "NONE".to_string()
@@ -249,7 +249,7 @@ mod book_tests {
         let epub_file = File::open("./data/moby-dick.epub").unwrap();
         let mut archive = ZipArchive::new(epub_file).unwrap();
 
-        let opf_path = Book::parse_container(&mut archive);
+        let opf_path = EBook::parse_container(&mut archive);
 
         assert!(opf_path.is_ok());
         assert_eq!(opf_path.unwrap(), "OPS/package.opf")
@@ -257,14 +257,14 @@ mod book_tests {
 
     #[test]
     fn read_epub_should_detect_content_directory() {
-        let book = Book::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+        let book = EBook::read_epub("./data/moby-dick.epub".to_string()).unwrap();
 
         assert_eq!(book._content_dir.to_str().unwrap(), "OPS");
     }
 
     #[test]
     fn parse_opf_should_return_book_with_correct_metadata() {
-        let book = Book::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+        let book = EBook::read_epub("./data/moby-dick.epub".to_string()).unwrap();
 
         let book_metadata = book.metadata;
 
@@ -305,7 +305,7 @@ mod book_tests {
             media_type: "application/xhtml+xml".to_string(),
         };
 
-        let book = Book::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+        let book = EBook::read_epub("./data/moby-dick.epub".to_string()).unwrap();
 
         let spine = book.spine;
 
@@ -324,7 +324,7 @@ mod book_tests {
 
     #[test]
     fn parse_opf_should_return_book_with_correct_manifest() {
-        let book = Book::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+        let book = EBook::read_epub("./data/moby-dick.epub".to_string()).unwrap();
 
         let manifest = book.manifest;
 
@@ -349,7 +349,7 @@ mod manifest_tests {
 
     #[test]
     fn search_for_item_should_return_matching_item_when_queried() {
-        let book = Book::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+        let book = EBook::read_epub("./data/moby-dick.epub".to_string()).unwrap();
 
         let manifest = book.manifest;
 
@@ -369,7 +369,7 @@ mod table_of_contents_tests {
 
     #[test]
     fn search_for_item_should_return_matching_item_when_queried() {
-        let book = Book::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+        let book = EBook::read_epub("./data/moby-dick.epub".to_string()).unwrap();
 
         let table_of_contents = book.table_of_contents;
 

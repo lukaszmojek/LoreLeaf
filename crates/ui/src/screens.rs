@@ -75,7 +75,9 @@ pub mod splash {
 pub mod home {
     use crate::{
         buttons::{button_system, ButtonConfiguration},
-        library::{library_system, RefreshLibraryTimer},
+        library::{
+            initialize_library, print_user_library, refresh_user_library, RefreshLibraryTimer,
+        },
         text::TEXT_COLOR,
     };
 
@@ -109,10 +111,15 @@ pub mod home {
                     OnExit(NavigationState::Home),
                     despawn_screen::<OnHomeScreen>,
                 )
-                .add_systems(OnEnter(NavigationState::Library), library_setup)
+                .add_systems(
+                    OnEnter(NavigationState::Library),
+                    (library_setup, initialize_library).chain(),
+                )
                 .add_systems(
                     Update,
-                    (library_system).run_if(in_state(NavigationState::Library)),
+                    (refresh_user_library, print_user_library)
+                        .chain()
+                        .run_if(in_state(NavigationState::Library)),
                 )
                 .add_systems(
                     OnExit(NavigationState::Library),

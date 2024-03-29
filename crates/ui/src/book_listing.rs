@@ -19,6 +19,7 @@ struct Book {
     author: String,
 }
 
+//TODO: Try merging that with library and use epub to read metadata from books
 fn propagate_user_books(mut commands: Commands) {
     commands.spawn(Book {
         name: "Słowa światłości".to_string(),
