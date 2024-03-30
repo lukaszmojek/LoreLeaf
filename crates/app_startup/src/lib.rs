@@ -23,7 +23,6 @@ pub fn start_app() {
                 }),
                 ..Default::default()
             }),
-            ui::UserBooksPlugin,
             ui::SplashPlugin,
             ui::HomePlugin,
         ))

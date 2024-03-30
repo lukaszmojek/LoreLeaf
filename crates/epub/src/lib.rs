@@ -53,7 +53,7 @@ impl TableOfContents {
     pub fn from_content(toc_content: String) -> TableOfContents {
         let mut reader = Reader::from_str(toc_content.borrow());
         reader.trim_text(true);
-        println!("{:?}", toc_content);
+
         let navigation_selector: String = "toc".to_string();
 
         let mut buf = Vec::new();
@@ -86,7 +86,6 @@ impl TableOfContents {
                 }
                 Event::Text(e) => {
                     toc_item_label = e.unescape().unwrap().to_string();
-                    println!("{:?}", toc_item_label);
                 }
                 Event::End(e) => {
                     if !toc_item_reading_started {
@@ -204,7 +203,6 @@ impl EBook {
     ) -> TableOfContents {
         // todo!("Href here is not absolute, it is relative to opf file. This needs to be addressed.");
         let table_of_contents_from_manifest = manifest.search_for_item("toc").unwrap();
-        println!("{:?}", table_of_contents_from_manifest);
 
         let toc_path = content_dir.join(table_of_contents_from_manifest.href.clone());
 

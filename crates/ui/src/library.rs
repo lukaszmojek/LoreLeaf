@@ -4,12 +4,8 @@ use epub::EBook;
 use std::{
     fs::{self, DirEntry},
     path::Path,
+    time::{SystemTime, UNIX_EPOCH},
 };
-
-// const USER_BOOK_DIRECTORY: UserDirs = match UserDirs::new() {
-//     Some(v) => v,
-//     None => panic!("Couldn't load user directories"),
-// };
 
 #[derive(Component, Debug)]
 pub struct UserLibrary {
@@ -47,7 +43,6 @@ pub fn initialize_library(mut commands: Commands) {
     commands.spawn(UserLibrary::empty());
 }
 
-//TODO: Merge with book_listing
 pub fn refresh_user_library(
     time: Res<Time>,
     mut timer: ResMut<RefreshLibraryTimer>,
@@ -84,11 +79,23 @@ pub fn print_user_library(
     mut timer: ResMut<RefreshLibraryTimer>,
     query: Query<&UserLibrary>,
 ) {
+    //TODO: Fix Polish letters not being displayed correctly
     if timer.0.tick(time.delta()).just_finished() {
         for book in &query {
             println!("{:#?}", book);
         }
     }
+}
+
+fn print_current_time() {
+    let start = SystemTime::now();
+    let since_the_epoch = start
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards");
+
+    let in_seconds = since_the_epoch.as_secs();
+
+    println!("{:?}", in_seconds);
 }
 
 #[derive(Resource, Deref, DerefMut)]
