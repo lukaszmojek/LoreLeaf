@@ -1,8 +1,10 @@
 # LoreLeaf
 
-What you would call a ebook reading app. But better. 'Loreful' if you will.
+What you would call an ebook reading app. But better. 'Loreful' if you will.
 
 ![LoreLeaf_logo](./assets/logo_320.jpeg)
+
+---
 
 ## The why
 
@@ -22,6 +24,8 @@ Other problem that I couldn't see being addressed properly are:
 - [Tauri](https://tauri.app/) - open source framework for developing desktop applications with a web frontend
 
 Since from all of those, the one that is giving the most freedom is **Bevy**, I decided to go with it.
+
+---
 
 ## The what
 
@@ -44,3 +48,9 @@ Since from all of those, the one that is giving the most freedom is **Bevy**, I 
   - [ ] Synchronization with ebook
 - [ ] Analyzing books
   - [ ] Ability to automatically scrape all the data from inside the book to create a lore 'database'
+
+---
+
+## Development
+
+If you are interested in running project locally and contributing to it, please refer to the [CONTRIBUTING.md](./CONTRIBUTING.md) file.
