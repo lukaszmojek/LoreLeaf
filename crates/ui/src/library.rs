@@ -7,6 +7,9 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+const UNKNOWN: &str = "UNKNOWN";
+const BOOK_FORMATS: [&str; 1] = ["epub"];
+
 #[derive(Component, Debug)]
 pub struct UserLibrary {
     pub books: Vec<Book>,
@@ -22,13 +25,11 @@ impl UserLibrary {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Book {
     name: String,
     author: String,
 }
-
-const UNKNOWN: &str = "UNKNOWN";
 
 impl Book {
     pub fn from_ebook(ebook: EBook) -> Book {
@@ -36,6 +37,23 @@ impl Book {
             name: ebook.metadata.title.unwrap_or(UNKNOWN.to_string()),
             author: ebook.metadata.creator.unwrap_or(UNKNOWN.to_string()),
         }
+    }
+}
+
+impl PartialEq for Book {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name && self.author == other.author
+    }
+}
+
+#[derive(Component, Debug, Clone)]
+pub struct BookTile {
+    book: Book,
+}
+
+impl PartialEq for BookTile {
+    fn eq(&self, other: &Self) -> bool {
+        self.book == other.book
     }
 }
 
@@ -59,7 +77,7 @@ pub fn refresh_user_library(
             let user_books: Vec<Book> = books_iterator
                 .map(|dir_entry| {
                     //TODO: Fix that strange conversion to String
-                    let epub_path = String::from(dir_entry.path().to_str().unwrap().to_string());
+                    let epub_path = dir_entry.path().to_str().unwrap().to_string();
                     let epub = EBook::read_epub(epub_path);
 
                     epub
@@ -77,14 +95,45 @@ pub fn refresh_user_library(
 pub fn print_user_library(
     time: Res<Time>,
     mut timer: ResMut<RefreshLibraryTimer>,
-    query: Query<&UserLibrary>,
+    mut commands: Commands,
+    userLibraryQuery: Query<&UserLibrary>,
+    bookTilesQuery: Query<&BookTile>,
 ) {
     //TODO: Fix Polish letters not being displayed correctly
     if timer.0.tick(time.delta()).just_finished() {
-        for book in &query {
+        for book in &userLibraryQuery {
             println!("{:#?}", book);
         }
     }
+}
+
+struct BookDifference {
+    to_add: Vec<BookTile>,
+    to_remove: Vec<BookTile>,
+}
+
+fn check_differences_in_books_on_ui(
+    userLibrary: &UserLibrary,
+    bookTiles: &Vec<BookTile>,
+) -> BookDifference {
+    let mut to_add: Vec<BookTile> = vec![];
+    let mut to_remove: Vec<BookTile> = vec![];
+
+    userLibrary.books.iter().for_each(|book| {
+        let book_tile = BookTile { book: book.clone() };
+
+        if !bookTiles.contains(&book_tile) {
+            to_add.push(book_tile);
+        }
+    });
+
+    bookTiles.iter().for_each(|book_tile| {
+        if !userLibrary.books.contains(&book_tile.book) {
+            to_remove.push(book_tile.clone());
+        }
+    });
+
+    BookDifference { to_add, to_remove }
 }
 
 fn print_current_time() {
@@ -100,8 +149,6 @@ fn print_current_time() {
 
 #[derive(Resource, Deref, DerefMut)]
 pub struct RefreshLibraryTimer(pub Timer);
-
-const BOOK_FORMATS: [&str; 1] = ["epub"];
 
 fn get_all_books_from_path(path: &Path) -> Vec<DirEntry> {
     let mut found_books: Vec<DirEntry> = vec![];
@@ -144,5 +191,98 @@ mod tests {
         let books = get_all_books_from_path(&path);
 
         assert_eq!(books.length(), 2);
+    }
+}
+
+#[cfg(test)]
+mod check_differences_in_books_on_ui_tests {
+    use super::*;
+
+    #[test]
+    fn should_return_empty() {
+        let user_library = UserLibrary::empty();
+        let book_tiles = vec![];
+
+        let book_difference = check_differences_in_books_on_ui(&user_library, &book_tiles);
+
+        assert_eq!(book_difference.to_add.len(), 0);
+        assert_eq!(book_difference.to_remove.len(), 0);
+    }
+
+    #[test]
+    fn should_return_1_book_to_add_in_library() {
+        let mut user_library = UserLibrary::empty();
+        let books = vec![
+            Book {
+                name: "Name 1".to_string(),
+                author: "Author 1".to_string(),
+            },
+            Book {
+                name: "Name 2".to_string(),
+                author: "Author 2".to_string(),
+            },
+        ];
+        user_library.set_books(books);
+        let book_tiles = vec![BookTile {
+            book: Book {
+                name: "Name 1".to_string(),
+                author: "Author 1".to_string(),
+            },
+        }];
+
+        let book_difference = check_differences_in_books_on_ui(&user_library, &book_tiles);
+
+        assert_eq!(book_difference.to_add.len(), 1);
+        assert_eq!(book_difference.to_remove.len(), 0);
+    }
+
+    #[test]
+    fn should_return_1_book_to_remove_from_library() {
+        let mut user_library = UserLibrary::empty();
+        let books = vec![Book {
+            name: "Name 1".to_string(),
+            author: "Author 1".to_string(),
+        }];
+        user_library.set_books(books);
+        let book_tiles = vec![
+            BookTile {
+                book: Book {
+                    name: "Name 1".to_string(),
+                    author: "Author 1".to_string(),
+                },
+            },
+            BookTile {
+                book: Book {
+                    name: "Name 3".to_string(),
+                    author: "Author 3".to_string(),
+                },
+            },
+        ];
+
+        let book_difference = check_differences_in_books_on_ui(&user_library, &book_tiles);
+
+        assert_eq!(book_difference.to_add.len(), 0);
+        assert_eq!(book_difference.to_remove.len(), 1);
+    }
+
+    #[test]
+    fn should_return_1_book_to_add_and_1_book_to_remove_from_library() {
+        let mut user_library = UserLibrary::empty();
+        let books = vec![Book {
+            name: "Name 2".to_string(),
+            author: "Author 2".to_string(),
+        }];
+        user_library.set_books(books);
+        let book_tiles = vec![BookTile {
+            book: Book {
+                name: "Name 1".to_string(),
+                author: "Author 1".to_string(),
+            },
+        }];
+
+        let book_difference = check_differences_in_books_on_ui(&user_library, &book_tiles);
+
+        assert_eq!(book_difference.to_add.len(), 1);
+        assert_eq!(book_difference.to_remove.len(), 1);
     }
 }

@@ -51,6 +51,6 @@ Since from all of those, the one that is giving the most freedom is **Bevy**, I 
 
 ---
 
-## Development
+## Running locally / contributing
 
 If you are interested in running project locally and contributing to it, please refer to the [CONTRIBUTING.md](./CONTRIBUTING.md) file.
