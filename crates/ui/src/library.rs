@@ -2,10 +2,13 @@ use bevy::prelude::*;
 use directories::UserDirs;
 use epub::EBook;
 use std::{
+    borrow::BorrowMut,
     fs::{self, DirEntry},
     path::Path,
     time::{SystemTime, UNIX_EPOCH},
 };
+
+use crate::screens::home::OnLibraryScreen;
 
 const UNKNOWN: &str = "UNKNOWN";
 const BOOK_FORMATS: [&str; 1] = ["epub"];
@@ -66,8 +69,10 @@ impl PartialEq for Book {
     }
 }
 
-pub fn initialize_library(mut commands: Commands) {
-    commands.spawn(UserLibrary::empty());
+pub fn initialize_library(mut commands: Commands, query: Query<&UserLibrary>) {
+    if query.iter().next().is_none() {
+        commands.spawn(UserLibrary::empty());
+    }
 }
 
 pub fn refresh_user_library(
@@ -101,22 +106,33 @@ pub fn refresh_user_library(
     }
 }
 
-pub fn print_user_library(
+//TODO: Change UserLibrary needs to be a resource, since it is a unique data
+//https://bevyengine.org/learn/quick-start/getting-started/resources/
+pub fn display_user_library(
     time: Res<Time>,
     mut timer: ResMut<RefreshLibraryTimer>,
     mut commands: Commands,
-    user_library_query: Query<&UserLibrary>,
+    user_library_query: Query<&mut UserLibrary>,
 ) {
-    // let difference = check_differences_in_books_on_ui(
-    //     &user_library_query
-    //         .get_single()
-    //         .unwrap_or_else(|_| &UserLibrary::empty()),
-    // );
-
-    //TODO: Fix Polish letters not being displayed correctly
     if timer.0.tick(time.delta()).just_finished() {
         for book in &user_library_query {
+            //TODO: Fix Polish letters not being displayed correctly
             println!("{:#?}", book);
+        }
+
+        if let Some(user_library) = user_library_query.iter().next() {
+            let differences = check_differences_in_books_on_ui(user_library);
+
+            let to_add = differences.to_add;
+            let to_remove = differences.to_remove;
+
+            for book in to_add {
+                println!("ADD: {:#?}", book);
+            }
+
+            for book in to_remove {
+                println!("REMOVE: {:#?}", book);
+            }
         }
     }
 }

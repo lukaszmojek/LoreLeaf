@@ -76,7 +76,7 @@ pub mod home {
     use crate::{
         buttons::{button_system, ButtonConfiguration},
         library::{
-            initialize_library, print_user_library, refresh_user_library, RefreshLibraryTimer,
+            display_user_library, initialize_library, refresh_user_library, RefreshLibraryTimer,
         },
         text::TEXT_COLOR,
     };
@@ -117,7 +117,7 @@ pub mod home {
                 )
                 .add_systems(
                     Update,
-                    (refresh_user_library, print_user_library)
+                    (refresh_user_library, display_user_library)
                         .chain()
                         .run_if(in_state(NavigationState::Library)),
                 )
@@ -132,7 +132,7 @@ pub mod home {
     struct OnHomeScreen;
 
     #[derive(Component)]
-    struct OnLibraryScreen;
+    pub struct OnLibraryScreen;
 
     #[derive(Component)]
     struct OnReaderScreen;
