@@ -12,16 +12,36 @@ const BOOK_FORMATS: [&str; 1] = ["epub"];
 
 #[derive(Component, Debug)]
 pub struct UserLibrary {
-    pub books: Vec<Book>,
+    pub detected: Vec<Book>,
+    pub displayed: Vec<Book>,
+    pub to_add: Vec<Book>,
+    pub to_remove: Vec<Book>,
 }
 
 impl UserLibrary {
     pub fn empty() -> UserLibrary {
-        Self { books: vec![] }
+        Self {
+            detected: vec![],
+            displayed: vec![],
+            to_add: vec![],
+            to_remove: vec![],
+        }
     }
 
-    pub fn set_books(&mut self, books: Vec<Book>) {
-        self.books = books;
+    pub fn set_detected(&mut self, books: Vec<Book>) {
+        self.detected = books;
+    }
+
+    pub fn set_displayed(&mut self, books: Vec<Book>) {
+        self.displayed = books;
+    }
+
+    pub fn set_to_add(&mut self, books: Vec<Book>) {
+        self.to_add = books;
+    }
+
+    pub fn set_to_remove(&mut self, books: Vec<Book>) {
+        self.to_remove = books;
     }
 }
 
@@ -43,17 +63,6 @@ impl Book {
 impl PartialEq for Book {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name && self.author == other.author
-    }
-}
-
-#[derive(Component, Debug, Clone)]
-pub struct BookTile {
-    book: Book,
-}
-
-impl PartialEq for BookTile {
-    fn eq(&self, other: &Self) -> bool {
-        self.book == other.book
     }
 }
 
@@ -87,7 +96,7 @@ pub fn refresh_user_library(
                 .map(|y| Book::from_ebook(y))
                 .collect();
 
-            query.single_mut().set_books(user_books);
+            query.single_mut().set_detected(user_books);
         }
     }
 }
@@ -96,40 +105,42 @@ pub fn print_user_library(
     time: Res<Time>,
     mut timer: ResMut<RefreshLibraryTimer>,
     mut commands: Commands,
-    userLibraryQuery: Query<&UserLibrary>,
-    bookTilesQuery: Query<&BookTile>,
+    user_library_query: Query<&UserLibrary>,
 ) {
+    // let difference = check_differences_in_books_on_ui(
+    //     &user_library_query
+    //         .get_single()
+    //         .unwrap_or_else(|_| &UserLibrary::empty()),
+    // );
+
     //TODO: Fix Polish letters not being displayed correctly
     if timer.0.tick(time.delta()).just_finished() {
-        for book in &userLibraryQuery {
+        for book in &user_library_query {
             println!("{:#?}", book);
         }
     }
 }
 
 struct BookDifference {
-    to_add: Vec<BookTile>,
-    to_remove: Vec<BookTile>,
+    to_add: Vec<Book>,
+    to_remove: Vec<Book>,
 }
 
-fn check_differences_in_books_on_ui(
-    userLibrary: &UserLibrary,
-    bookTiles: &Vec<BookTile>,
-) -> BookDifference {
-    let mut to_add: Vec<BookTile> = vec![];
-    let mut to_remove: Vec<BookTile> = vec![];
+fn check_differences_in_books_on_ui(user_library: &UserLibrary) -> BookDifference {
+    let mut to_add: Vec<Book> = vec![];
+    let mut to_remove: Vec<Book> = vec![];
 
-    userLibrary.books.iter().for_each(|book| {
-        let book_tile = BookTile { book: book.clone() };
+    user_library.detected.iter().for_each(|book| {
+        let book_tile = book.clone();
 
-        if !bookTiles.contains(&book_tile) {
+        if !user_library.displayed.contains(&book_tile) {
             to_add.push(book_tile);
         }
     });
 
-    bookTiles.iter().for_each(|book_tile| {
-        if !userLibrary.books.contains(&book_tile.book) {
-            to_remove.push(book_tile.clone());
+    user_library.displayed.iter().for_each(|book| {
+        if !user_library.detected.contains(&book) {
+            to_remove.push(book.clone());
         }
     });
 
@@ -201,9 +212,8 @@ mod check_differences_in_books_on_ui_tests {
     #[test]
     fn should_return_empty() {
         let user_library = UserLibrary::empty();
-        let book_tiles = vec![];
 
-        let book_difference = check_differences_in_books_on_ui(&user_library, &book_tiles);
+        let book_difference = check_differences_in_books_on_ui(&user_library);
 
         assert_eq!(book_difference.to_add.len(), 0);
         assert_eq!(book_difference.to_remove.len(), 0);
@@ -212,7 +222,7 @@ mod check_differences_in_books_on_ui_tests {
     #[test]
     fn should_return_1_book_to_add_in_library() {
         let mut user_library = UserLibrary::empty();
-        let books = vec![
+        let detected = vec![
             Book {
                 name: "Name 1".to_string(),
                 author: "Author 1".to_string(),
@@ -222,15 +232,14 @@ mod check_differences_in_books_on_ui_tests {
                 author: "Author 2".to_string(),
             },
         ];
-        user_library.set_books(books);
-        let book_tiles = vec![BookTile {
-            book: Book {
-                name: "Name 1".to_string(),
-                author: "Author 1".to_string(),
-            },
+        let displayed = vec![Book {
+            name: "Name 1".to_string(),
+            author: "Author 1".to_string(),
         }];
+        user_library.set_detected(detected);
+        user_library.set_displayed(displayed);
 
-        let book_difference = check_differences_in_books_on_ui(&user_library, &book_tiles);
+        let book_difference = check_differences_in_books_on_ui(&user_library);
 
         assert_eq!(book_difference.to_add.len(), 1);
         assert_eq!(book_difference.to_remove.len(), 0);
@@ -239,27 +248,24 @@ mod check_differences_in_books_on_ui_tests {
     #[test]
     fn should_return_1_book_to_remove_from_library() {
         let mut user_library = UserLibrary::empty();
-        let books = vec![Book {
+        let detected = vec![Book {
             name: "Name 1".to_string(),
             author: "Author 1".to_string(),
         }];
-        user_library.set_books(books);
-        let book_tiles = vec![
-            BookTile {
-                book: Book {
-                    name: "Name 1".to_string(),
-                    author: "Author 1".to_string(),
-                },
+        let displayed = vec![
+            Book {
+                name: "Name 1".to_string(),
+                author: "Author 1".to_string(),
             },
-            BookTile {
-                book: Book {
-                    name: "Name 3".to_string(),
-                    author: "Author 3".to_string(),
-                },
+            Book {
+                name: "Name 2".to_string(),
+                author: "Author 2".to_string(),
             },
         ];
+        user_library.set_detected(detected);
+        user_library.set_displayed(displayed);
 
-        let book_difference = check_differences_in_books_on_ui(&user_library, &book_tiles);
+        let book_difference = check_differences_in_books_on_ui(&user_library);
 
         assert_eq!(book_difference.to_add.len(), 0);
         assert_eq!(book_difference.to_remove.len(), 1);
@@ -272,15 +278,14 @@ mod check_differences_in_books_on_ui_tests {
             name: "Name 2".to_string(),
             author: "Author 2".to_string(),
         }];
-        user_library.set_books(books);
-        let book_tiles = vec![BookTile {
-            book: Book {
-                name: "Name 1".to_string(),
-                author: "Author 1".to_string(),
-            },
+        let displayed = vec![Book {
+            name: "Name 3".to_string(),
+            author: "Author 3".to_string(),
         }];
+        user_library.set_detected(books);
+        user_library.set_displayed(displayed);
 
-        let book_difference = check_differences_in_books_on_ui(&user_library, &book_tiles);
+        let book_difference = check_differences_in_books_on_ui(&user_library);
 
         assert_eq!(book_difference.to_add.len(), 1);
         assert_eq!(book_difference.to_remove.len(), 1);
