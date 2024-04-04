@@ -75,9 +75,7 @@ pub mod splash {
 pub mod home {
     use crate::{
         buttons::{button_system, ButtonConfiguration},
-        library::{
-            display_user_library, initialize_library, refresh_user_library, RefreshLibraryTimer,
-        },
+        library::{display_user_library, refresh_user_library, RefreshLibraryTimer, UserLibrary},
         text::TEXT_COLOR,
     };
 
@@ -111,10 +109,7 @@ pub mod home {
                     OnExit(NavigationState::Home),
                     despawn_screen::<OnHomeScreen>,
                 )
-                .add_systems(
-                    OnEnter(NavigationState::Library),
-                    (library_setup, initialize_library).chain(),
-                )
+                .add_systems(OnEnter(NavigationState::Library), (library_setup).chain())
                 .add_systems(
                     Update,
                     (refresh_user_library, display_user_library)
@@ -223,7 +218,8 @@ pub mod home {
         commands.insert_resource(RefreshLibraryTimer(Timer::from_seconds(
             2.0,
             TimerMode::Repeating,
-        )))
+        )));
+        commands.insert_resource(UserLibrary::empty());
     }
 
     fn home_navigation_setup(mut commands: Commands, asset_server: Res<AssetServer>) {

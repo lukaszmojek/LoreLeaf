@@ -13,7 +13,7 @@ use crate::screens::home::OnLibraryScreen;
 const UNKNOWN: &str = "UNKNOWN";
 const BOOK_FORMATS: [&str; 1] = ["epub"];
 
-#[derive(Component, Debug)]
+#[derive(Resource, Debug)]
 pub struct UserLibrary {
     pub detected: Vec<Book>,
     pub displayed: Vec<Book>,
@@ -69,16 +69,10 @@ impl PartialEq for Book {
     }
 }
 
-pub fn initialize_library(mut commands: Commands, query: Query<&UserLibrary>) {
-    if query.iter().next().is_none() {
-        commands.spawn(UserLibrary::empty());
-    }
-}
-
 pub fn refresh_user_library(
     time: Res<Time>,
     mut timer: ResMut<RefreshLibraryTimer>,
-    mut query: Query<&mut UserLibrary>,
+    mut user_library: ResMut<UserLibrary>,
 ) {
     if timer.0.tick(time.delta()).just_finished() {
         //TODO: Take those values from user configuration
@@ -101,7 +95,7 @@ pub fn refresh_user_library(
                 .map(|y| Book::from_ebook(y))
                 .collect();
 
-            query.single_mut().set_detected(user_books);
+            user_library.set_detected(user_books);
         }
     }
 }
@@ -111,28 +105,26 @@ pub fn refresh_user_library(
 pub fn display_user_library(
     time: Res<Time>,
     mut timer: ResMut<RefreshLibraryTimer>,
+    mut user_library: ResMut<UserLibrary>,
     mut commands: Commands,
-    user_library_query: Query<&mut UserLibrary>,
 ) {
     if timer.0.tick(time.delta()).just_finished() {
-        for book in &user_library_query {
+        for book in user_library.detected.iter() {
             //TODO: Fix Polish letters not being displayed correctly
             println!("{:#?}", book);
         }
 
-        if let Some(user_library) = user_library_query.iter().next() {
-            let differences = check_differences_in_books_on_ui(user_library);
+        let differences = check_differences_in_books_on_ui(&user_library);
 
-            let to_add = differences.to_add;
-            let to_remove = differences.to_remove;
+        let to_add = differences.to_add;
+        let to_remove = differences.to_remove;
 
-            for book in to_add {
-                println!("ADD: {:#?}", book);
-            }
+        for book in to_add {
+            println!("ADD: {:#?}", book);
+        }
 
-            for book in to_remove {
-                println!("REMOVE: {:#?}", book);
-            }
+        for book in to_remove {
+            println!("REMOVE: {:#?}", book);
         }
     }
 }
