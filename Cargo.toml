@@ -7,12 +7,7 @@ edition = "2021"
 
 [workspace]
 
-members = [
-    "crates/app_startup",
-    "crates/book_analyzer",
-    "crates/epub",
-    "crates/ui",
-]
+members = ["crates/app_startup", "crates/epub", "crates/ui"]
 
 [dependencies]
 app_startup = { version = "0.1.0", path = "crates/app_startup" }
