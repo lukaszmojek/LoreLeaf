@@ -2,16 +2,19 @@ use bevy::prelude::*;
 use directories::UserDirs;
 use epub::EBook;
 use std::{
-    borrow::BorrowMut,
     fs::{self, DirEntry},
     path::Path,
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use crate::screens::home::OnLibraryScreen;
-
 const UNKNOWN: &str = "UNKNOWN";
 const BOOK_FORMATS: [&str; 1] = ["epub"];
+
+//TODO: Look at the example from bevy in /examples/ecs/state.rs
+#[derive(Resource)]
+struct LibraryViewData {
+    container_entity: Entity,
+}
 
 #[derive(Resource, Debug)]
 pub struct UserLibrary {
@@ -54,6 +57,11 @@ struct Book {
     author: String,
 }
 
+#[derive(Component, Debug)]
+pub struct BookTile {
+    book: Book,
+}
+
 impl Book {
     pub fn from_ebook(ebook: EBook) -> Book {
         Self {
@@ -69,7 +77,7 @@ impl PartialEq for Book {
     }
 }
 
-pub fn refresh_user_library(
+pub fn detect_books_in_library(
     time: Res<Time>,
     mut timer: ResMut<RefreshLibraryTimer>,
     mut user_library: ResMut<UserLibrary>,
@@ -86,13 +94,11 @@ pub fn refresh_user_library(
                 .map(|dir_entry| {
                     //TODO: Fix that strange conversion to String
                     let epub_path = dir_entry.path().to_str().unwrap().to_string();
-                    let epub = EBook::read_epub(epub_path);
 
-                    epub
+                    EBook::read_epub(epub_path)
                 })
-                .filter(|entry| entry.is_ok())
-                .map(|x| x.unwrap())
-                .map(|y| Book::from_ebook(y))
+                .filter_map(|x| x.ok())
+                .map(Book::from_ebook)
                 .collect();
 
             user_library.set_detected(user_books);
@@ -100,13 +106,10 @@ pub fn refresh_user_library(
     }
 }
 
-//TODO: Change UserLibrary needs to be a resource, since it is a unique data
-//https://bevyengine.org/learn/quick-start/getting-started/resources/
-pub fn display_user_library(
+pub fn compare_books_in_user_library(
     time: Res<Time>,
     mut timer: ResMut<RefreshLibraryTimer>,
     mut user_library: ResMut<UserLibrary>,
-    mut commands: Commands,
 ) {
     if timer.0.tick(time.delta()).just_finished() {
         for book in user_library.detected.iter() {
@@ -116,16 +119,8 @@ pub fn display_user_library(
 
         let differences = check_differences_in_books_on_ui(&user_library);
 
-        let to_add = differences.to_add;
-        let to_remove = differences.to_remove;
-
-        for book in to_add {
-            println!("ADD: {:#?}", book);
-        }
-
-        for book in to_remove {
-            println!("REMOVE: {:#?}", book);
-        }
+        user_library.set_to_add(differences.to_add);
+        user_library.set_to_remove(differences.to_remove);
     }
 }
 
@@ -202,10 +197,12 @@ mod tests {
 
     use super::*;
 
+    const TEST_BOOKS_PATH: &str = "test_data/";
+
     #[test]
     fn test_library_system() {
         let current_directory = env::current_dir().unwrap();
-        let path = Path::new(current_directory.to_str().unwrap()).join("test_data/");
+        let path = Path::new(current_directory.to_str().unwrap()).join(TEST_BOOKS_PATH);
 
         let books = get_all_books_from_path(&path);
 

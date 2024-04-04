@@ -75,7 +75,9 @@ pub mod splash {
 pub mod home {
     use crate::{
         buttons::{button_system, ButtonConfiguration},
-        library::{display_user_library, refresh_user_library, RefreshLibraryTimer, UserLibrary},
+        library::{
+            compare_books_in_user_library, detect_books_in_library, RefreshLibraryTimer, UserLibrary,
+        },
         text::TEXT_COLOR,
     };
 
@@ -112,7 +114,10 @@ pub mod home {
                 .add_systems(OnEnter(NavigationState::Library), (library_setup).chain())
                 .add_systems(
                     Update,
-                    (refresh_user_library, display_user_library)
+                    (
+                        detect_books_in_library,
+                        compare_books_in_user_library,
+                    )
                         .chain()
                         .run_if(in_state(NavigationState::Library)),
                 )
