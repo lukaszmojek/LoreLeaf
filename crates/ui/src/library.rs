@@ -11,9 +11,11 @@ const UNKNOWN: &str = "UNKNOWN";
 const BOOK_FORMATS: [&str; 1] = ["epub"];
 
 //TODO: Look at the example from bevy in /examples/ecs/state.rs
+//Reference to UI element (entity) is needed, so that it can be modified later on
+//This is not simple to do by using Component and Query, so it has to be done by using a Resource
 #[derive(Resource)]
-struct LibraryViewData {
-    container_entity: Entity,
+pub struct LibraryViewData {
+    pub container_entity: Entity,
 }
 
 #[derive(Resource, Debug)]
@@ -55,11 +57,6 @@ impl UserLibrary {
 struct Book {
     name: String,
     author: String,
-}
-
-#[derive(Component, Debug)]
-pub struct BookTile {
-    book: Book,
 }
 
 impl Book {
@@ -187,6 +184,32 @@ fn get_all_books_from_path(path: &Path) -> Vec<DirEntry> {
     }
 
     found_books
+}
+
+pub fn refresh_user_library_on_ui(
+    mut commands: Commands,
+    menu_data: Res<LibraryViewData>,
+    user_library: Res<UserLibrary>,
+) {
+    let entity = commands
+        .spawn(NodeBundle {
+            style: Style {
+                width: Val::Px(54.0),
+                height: Val::Px(54.0),
+                margin: UiRect::all(Val::Px(10.0)),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                border: UiRect::all(Val::Px(5.0)),
+                ..default()
+            },
+            background_color: BackgroundColor::from(Color::GREEN),
+            ..default()
+        })
+        .id();
+
+    commands
+        .entity(menu_data.container_entity)
+        .push_children(&[entity]);
 }
 
 #[cfg(test)]

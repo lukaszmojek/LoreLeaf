@@ -76,7 +76,8 @@ pub mod home {
     use crate::{
         buttons::{button_system, ButtonConfiguration},
         library::{
-            compare_books_in_user_library, detect_books_in_library, RefreshLibraryTimer, UserLibrary,
+            compare_books_in_user_library, detect_books_in_library, refresh_user_library_on_ui,
+            LibraryViewData, RefreshLibraryTimer, UserLibrary,
         },
         text::TEXT_COLOR,
     };
@@ -117,6 +118,7 @@ pub mod home {
                     (
                         detect_books_in_library,
                         compare_books_in_user_library,
+                        refresh_user_library_on_ui,
                     )
                         .chain()
                         .run_if(in_state(NavigationState::Library)),
@@ -188,7 +190,7 @@ pub mod home {
     }
 
     fn library_setup(mut commands: Commands) {
-        commands
+        let library_screen_entity = commands
             .spawn((
                 NodeBundle {
                     style: Style {
@@ -203,7 +205,6 @@ pub mod home {
                 OnLibraryScreen,
             ))
             .with_children(|parent| {
-                // Display the game name
                 parent.spawn(
                     TextBundle::from_section(
                         "LIBRARY",
@@ -218,8 +219,12 @@ pub mod home {
                         ..default()
                     }),
                 );
-            });
+            })
+            .id();
 
+        commands.insert_resource(LibraryViewData {
+            container_entity: library_screen_entity,
+        });
         commands.insert_resource(RefreshLibraryTimer(Timer::from_seconds(
             2.0,
             TimerMode::Repeating,
