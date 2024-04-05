@@ -48,6 +48,11 @@ impl UserLibrary {
         self.to_add = books;
     }
 
+    pub fn all_added(&mut self) {
+        self.displayed.append(&mut self.to_add);
+        self.to_add.clear();
+    }
+
     pub fn set_to_remove(&mut self, books: Vec<Book>) {
         self.to_remove = books;
     }
@@ -79,6 +84,7 @@ pub fn detect_books_in_library(
     mut timer: ResMut<RefreshLibraryTimer>,
     mut user_library: ResMut<UserLibrary>,
 ) {
+    print_current_time("detect_books_in_library");
     if timer.0.tick(time.delta()).just_finished() {
         //TODO: Take those values from user configuration
         let user_directories = UserDirs::new().unwrap();
@@ -108,17 +114,16 @@ pub fn compare_books_in_user_library(
     mut timer: ResMut<RefreshLibraryTimer>,
     mut user_library: ResMut<UserLibrary>,
 ) {
-    if timer.0.tick(time.delta()).just_finished() {
-        for book in user_library.detected.iter() {
-            //TODO: Fix Polish letters not being displayed correctly
-            println!("{:#?}", book);
-        }
-
-        let differences = check_differences_in_books_on_ui(&user_library);
-
-        user_library.set_to_add(differences.to_add);
-        user_library.set_to_remove(differences.to_remove);
+    print_current_time("compare_books_in_user_library");
+    for book in user_library.detected.iter() {
+        //TODO: Fix Polish letters not being displayed correctly
+        println!("{:#?}", book);
     }
+
+    let differences = check_differences_in_books_on_ui(&user_library);
+
+    user_library.set_to_add(differences.to_add);
+    user_library.set_to_remove(differences.to_remove);
 }
 
 struct BookDifference {
@@ -127,6 +132,7 @@ struct BookDifference {
 }
 
 fn check_differences_in_books_on_ui(user_library: &UserLibrary) -> BookDifference {
+    print_current_time("check_differences_in_books_on_ui");
     let mut to_add: Vec<Book> = vec![];
     let mut to_remove: Vec<Book> = vec![];
 
@@ -147,7 +153,7 @@ fn check_differences_in_books_on_ui(user_library: &UserLibrary) -> BookDifferenc
     BookDifference { to_add, to_remove }
 }
 
-fn print_current_time() {
+fn print_current_time(method_name: &str) {
     let start = SystemTime::now();
     let since_the_epoch = start
         .duration_since(UNIX_EPOCH)
@@ -155,6 +161,7 @@ fn print_current_time() {
 
     let in_seconds = since_the_epoch.as_secs();
 
+    println!("{:?}", method_name.to_uppercase());
     println!("{:?}", in_seconds);
 }
 
@@ -189,27 +196,31 @@ fn get_all_books_from_path(path: &Path) -> Vec<DirEntry> {
 pub fn refresh_user_library_on_ui(
     mut commands: Commands,
     menu_data: Res<LibraryViewData>,
-    user_library: Res<UserLibrary>,
+    mut user_library: ResMut<UserLibrary>,
 ) {
-    let entity = commands
-        .spawn(NodeBundle {
-            style: Style {
-                width: Val::Px(54.0),
-                height: Val::Px(54.0),
-                margin: UiRect::all(Val::Px(10.0)),
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                border: UiRect::all(Val::Px(5.0)),
+    for _ in user_library.to_add.iter() {
+        let entity = commands
+            .spawn(NodeBundle {
+                style: Style {
+                    width: Val::Px(54.0),
+                    height: Val::Px(54.0),
+                    margin: UiRect::all(Val::Px(10.0)),
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    border: UiRect::all(Val::Px(5.0)),
+                    ..default()
+                },
+                background_color: BackgroundColor::from(Color::GREEN),
                 ..default()
-            },
-            background_color: BackgroundColor::from(Color::GREEN),
-            ..default()
-        })
-        .id();
+            })
+            .id();
 
-    commands
-        .entity(menu_data.container_entity)
-        .push_children(&[entity]);
+        commands
+            .entity(menu_data.container_entity)
+            .push_children(&[entity]);
+    }
+
+    user_library.all_added();
 }
 
 #[cfg(test)]
