@@ -7,6 +7,11 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+use crate::{
+    screens::{despawn_screen, home::NavigationState},
+    text::TEXT_COLOR,
+};
+
 const UNKNOWN: &str = "UNKNOWN";
 const BOOK_FORMATS: [&str; 1] = ["epub"];
 
@@ -58,6 +63,74 @@ impl UserLibrary {
     }
 }
 
+#[derive(Component)]
+pub struct OnLibraryScreen;
+
+pub struct LibraryPlugin;
+
+impl Plugin for LibraryPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(OnEnter(NavigationState::Library), (library_setup).chain())
+            .add_systems(
+                Update,
+                (
+                    detect_books_in_library,
+                    compare_books_in_user_library,
+                    refresh_user_library_on_ui,
+                )
+                    .chain()
+                    .run_if(in_state(NavigationState::Library)),
+            )
+            .add_systems(
+                OnExit(NavigationState::Library),
+                despawn_screen::<OnLibraryScreen>,
+            );
+    }
+}
+
+fn library_setup(mut commands: Commands) {
+    let library_screen_entity = commands
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
+                    ..default()
+                },
+                ..default()
+            },
+            OnLibraryScreen,
+        ))
+        .with_children(|parent| {
+            parent.spawn(
+                TextBundle::from_section(
+                    "LIBRARY",
+                    TextStyle {
+                        font_size: 80.0,
+                        color: TEXT_COLOR,
+                        ..default()
+                    },
+                )
+                .with_style(Style {
+                    margin: UiRect::all(Val::Px(50.0)),
+                    ..default()
+                }),
+            );
+        })
+        .id();
+
+    commands.insert_resource(LibraryViewData {
+        container_entity: library_screen_entity,
+    });
+    commands.insert_resource(RefreshLibraryTimer(Timer::from_seconds(
+        2.0,
+        TimerMode::Repeating,
+    )));
+    commands.insert_resource(UserLibrary::empty());
+}
+
 #[derive(Debug, Clone)]
 struct Book {
     name: String,
@@ -84,7 +157,6 @@ pub fn detect_books_in_library(
     mut timer: ResMut<RefreshLibraryTimer>,
     mut user_library: ResMut<UserLibrary>,
 ) {
-    print_current_time("detect_books_in_library");
     if timer.0.tick(time.delta()).just_finished() {
         //TODO: Take those values from user configuration
         let user_directories = UserDirs::new().unwrap();
@@ -109,12 +181,7 @@ pub fn detect_books_in_library(
     }
 }
 
-pub fn compare_books_in_user_library(
-    time: Res<Time>,
-    mut timer: ResMut<RefreshLibraryTimer>,
-    mut user_library: ResMut<UserLibrary>,
-) {
-    print_current_time("compare_books_in_user_library");
+pub fn compare_books_in_user_library(mut user_library: ResMut<UserLibrary>) {
     for book in user_library.detected.iter() {
         //TODO: Fix Polish letters not being displayed correctly
         println!("{:#?}", book);
@@ -132,7 +199,6 @@ struct BookDifference {
 }
 
 fn check_differences_in_books_on_ui(user_library: &UserLibrary) -> BookDifference {
-    print_current_time("check_differences_in_books_on_ui");
     let mut to_add: Vec<Book> = vec![];
     let mut to_remove: Vec<Book> = vec![];
 

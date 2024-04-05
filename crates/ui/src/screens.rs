@@ -75,10 +75,7 @@ pub mod splash {
 pub mod home {
     use crate::{
         buttons::{button_system, ButtonConfiguration},
-        library::{
-            compare_books_in_user_library, detect_books_in_library, refresh_user_library_on_ui,
-            LibraryViewData, RefreshLibraryTimer, UserLibrary,
-        },
+        library::LibraryPlugin,
         text::TEXT_COLOR,
     };
 
@@ -112,29 +109,12 @@ pub mod home {
                     OnExit(NavigationState::Home),
                     despawn_screen::<OnHomeScreen>,
                 )
-                .add_systems(OnEnter(NavigationState::Library), (library_setup).chain())
-                .add_systems(
-                    Update,
-                    (
-                        detect_books_in_library,
-                        compare_books_in_user_library,
-                        refresh_user_library_on_ui,
-                    )
-                        .chain()
-                        .run_if(in_state(NavigationState::Library)),
-                )
-                .add_systems(
-                    OnExit(NavigationState::Library),
-                    despawn_screen::<OnLibraryScreen>,
-                );
+                .add_plugins(LibraryPlugin);
         }
     }
 
     #[derive(Component)]
     struct OnHomeScreen;
-
-    #[derive(Component)]
-    pub struct OnLibraryScreen;
 
     #[derive(Component)]
     struct OnReaderScreen;
@@ -187,49 +167,6 @@ pub mod home {
                     }),
                 );
             });
-    }
-
-    fn library_setup(mut commands: Commands) {
-        let library_screen_entity = commands
-            .spawn((
-                NodeBundle {
-                    style: Style {
-                        align_items: AlignItems::Center,
-                        justify_content: JustifyContent::Center,
-                        width: Val::Percent(100.0),
-                        height: Val::Percent(100.0),
-                        ..default()
-                    },
-                    ..default()
-                },
-                OnLibraryScreen,
-            ))
-            .with_children(|parent| {
-                parent.spawn(
-                    TextBundle::from_section(
-                        "LIBRARY",
-                        TextStyle {
-                            font_size: 80.0,
-                            color: TEXT_COLOR,
-                            ..default()
-                        },
-                    )
-                    .with_style(Style {
-                        margin: UiRect::all(Val::Px(50.0)),
-                        ..default()
-                    }),
-                );
-            })
-            .id();
-
-        commands.insert_resource(LibraryViewData {
-            container_entity: library_screen_entity,
-        });
-        commands.insert_resource(RefreshLibraryTimer(Timer::from_seconds(
-            2.0,
-            TimerMode::Repeating,
-        )));
-        commands.insert_resource(UserLibrary::empty());
     }
 
     fn home_navigation_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -339,8 +276,9 @@ pub mod home {
     }
 }
 
+//TODO: Move that to some common crate?
 // Generic system that takes a component as a parameter, and will despawn all entities with that component
-fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
+pub fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
     println!("DESPAWN: {:?}", to_despawn);
 
     for entity in &to_despawn {
