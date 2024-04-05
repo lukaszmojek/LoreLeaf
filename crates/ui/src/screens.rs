@@ -8,8 +8,10 @@ pub enum LoreLeafState {
 }
 
 pub mod splash {
-    use super::{despawn_screen, LoreLeafState};
     use bevy::prelude::*;
+    use common::utilities::despawn_screen;
+
+    use super::LoreLeafState;
 
     pub struct SplashPlugin;
 
@@ -73,27 +75,14 @@ pub mod splash {
 }
 
 pub mod home {
-    use crate::{
-        buttons::{button_system, ButtonConfiguration},
-        library::LibraryPlugin,
-        text::TEXT_COLOR,
-    };
+    use crate::buttons::{button_system, ButtonConfiguration};
 
-    use super::{despawn_screen, LoreLeafState};
+    use super::LoreLeafState;
     use bevy::prelude::*;
+    use common::{states::NavigationState, text::TEXT_COLOR, utilities::despawn_screen};
+    use library::plugin::LibraryPlugin;
 
     pub struct HomePlugin;
-
-    // State used for the current menu screen
-    #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
-    pub enum NavigationState {
-        Home,
-        Library,
-        Reader,
-        LoreExplorer,
-        #[default]
-        Disabled,
-    }
 
     impl Plugin for HomePlugin {
         fn build(&self, app: &mut App) {
@@ -273,15 +262,5 @@ pub mod home {
                 }
             }
         }
-    }
-}
-
-//TODO: Move that to some common crate?
-// Generic system that takes a component as a parameter, and will despawn all entities with that component
-pub fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
-    println!("DESPAWN: {:?}", to_despawn);
-
-    for entity in &to_despawn {
-        commands.entity(entity).despawn_recursive();
     }
 }

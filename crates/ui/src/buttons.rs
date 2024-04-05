@@ -1,6 +1,5 @@
 use bevy::prelude::*;
-
-use crate::text::TEXT_COLOR;
+use common::text::TEXT_COLOR;
 
 const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
 const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);

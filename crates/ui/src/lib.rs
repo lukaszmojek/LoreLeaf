@@ -1,7 +1,5 @@
 mod buttons;
-mod library;
 pub mod screens;
-mod text;
 
 use screens::{home, splash};
 

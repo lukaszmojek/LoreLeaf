@@ -1,5 +1,5 @@
 [package]
-name = "ui"
+name = "library"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,5 +7,6 @@ edition = "2021"
 
 [dependencies]
 bevy = "0.13.0"
-library = { path = "../library" }
+directories = "5.0.1"
+epub = { path = "../epub" }
 common = { path = "../common" }

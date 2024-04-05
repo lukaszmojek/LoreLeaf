@@ -1,5 +1,5 @@
 [package]
-name = "ui"
+name = "common"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,5 +7,3 @@ edition = "2021"
 
 [dependencies]
 bevy = "0.13.0"
-library = { path = "../library" }
-common = { path = "../common" }
