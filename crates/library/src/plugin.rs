@@ -36,8 +36,8 @@ fn library_setup(mut commands: Commands) {
         .spawn((
             NodeBundle {
                 style: Style {
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::FlexStart,
+                    justify_content: JustifyContent::FlexStart,
                     width: Val::Percent(100.0),
                     height: Val::Percent(100.0),
                     ..default()
