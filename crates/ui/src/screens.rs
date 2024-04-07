@@ -79,6 +79,7 @@ pub mod home {
 
     use super::LoreLeafState;
     use bevy::prelude::*;
+    use common::screens::MainScreenViewData;
     use common::{states::NavigationState, text::TEXT_COLOR, utilities::despawn_screen};
     use library::plugin::LibraryPlugin;
 
@@ -158,8 +159,9 @@ pub mod home {
             });
     }
 
+    //main screen setup
     fn home_navigation_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-        commands
+        let main_screen_entity = commands
             .spawn((
                 NodeBundle {
                     style: Style {
@@ -167,6 +169,7 @@ pub mod home {
                         height: Val::Percent(100.0),
                         align_items: AlignItems::Start,
                         justify_content: JustifyContent::Start,
+                        flex_direction: FlexDirection::Row,
                         ..default()
                     },
                     ..default()
@@ -208,7 +211,12 @@ pub mod home {
                             NavigationButtonAction::LoreExplorer,
                         );
                     });
-            });
+            })
+            .id();
+
+        commands.insert_resource(MainScreenViewData {
+            container_entity: main_screen_entity,
+        });
     }
 
     fn spawn_button(
