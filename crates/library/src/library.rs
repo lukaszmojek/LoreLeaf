@@ -59,7 +59,7 @@ impl UserLibrary {
 }
 
 #[derive(Debug, Clone)]
-struct Book {
+pub struct Book {
     name: String,
     author: String,
 }
@@ -191,12 +191,48 @@ pub fn refresh_user_library_on_ui(
     menu_data: Res<LibraryViewData>,
     mut user_library: ResMut<UserLibrary>,
 ) {
-    for _ in user_library.to_add.iter() {
+    //TODO: Try different font since this one is not displaying Polish letters correctly
+    for book_to_add in user_library.to_add.iter() {
+        let sections = vec![
+            TextSection {
+                value: "Name: ".to_string(),
+                style: TextStyle {
+                    font_size: 20.0,
+                    color: Color::BLACK,
+                    ..default()
+                },
+            },
+            TextSection {
+                value: book_to_add.name.clone(),
+                style: TextStyle {
+                    font_size: 20.0,
+                    color: Color::BLACK,
+                    ..default()
+                },
+            },
+            TextSection {
+                value: "Author: ".to_string(),
+                style: TextStyle {
+                    font_size: 20.0,
+                    color: Color::BLACK,
+                    ..default()
+                },
+            },
+            TextSection {
+                value: book_to_add.author.clone(),
+                style: TextStyle {
+                    font_size: 20.0,
+                    color: Color::BLACK,
+                    ..default()
+                },
+            },
+        ];
+
         let entity = commands
             .spawn(NodeBundle {
                 style: Style {
-                    width: Val::Px(54.0),
-                    height: Val::Px(54.0),
+                    width: Val::Px(120.0),
+                    height: Val::Px(240.0),
                     margin: UiRect::all(Val::Px(10.0)),
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
@@ -205,6 +241,9 @@ pub fn refresh_user_library_on_ui(
                 },
                 background_color: BackgroundColor::from(Color::GREEN),
                 ..default()
+            })
+            .with_children(|parent| {
+                parent.spawn(TextBundle::from_sections(sections));
             })
             .id();
 
