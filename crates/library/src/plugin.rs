@@ -63,8 +63,9 @@ fn library_setup(mut commands: Commands, main_screen_view_data: Res<MainScreenVi
     });
 
     commands.insert_resource(RefreshLibraryTimer(Timer::from_seconds(
-        2.0,
+        5.0,
         TimerMode::Repeating,
     )));
+
     commands.insert_resource(UserLibrary::empty());
 }

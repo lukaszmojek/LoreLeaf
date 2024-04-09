@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use common::utilities::print_current_time;
 use directories::UserDirs;
 use epub::EBook;
 use std::{
@@ -81,7 +82,10 @@ pub fn detect_books_in_library(
     mut timer: ResMut<RefreshLibraryTimer>,
     mut user_library: ResMut<UserLibrary>,
 ) {
-    if timer.0.tick(time.delta()).just_finished() {
+    let should_run_detection =
+        timer.0.tick(time.delta()).just_finished() || user_library.displayed.is_empty();
+
+    if should_run_detection {
         //TODO: Take those values from user configuration
         let user_directories = UserDirs::new().unwrap();
         let documents = user_directories.document_dir();
@@ -106,11 +110,6 @@ pub fn detect_books_in_library(
 }
 
 pub fn compare_books_in_user_library(mut user_library: ResMut<UserLibrary>) {
-    for book in user_library.detected.iter() {
-        //TODO: Fix Polish letters not being displayed correctly
-        println!("{:#?}", book);
-    }
-
     let differences = check_differences_in_books_on_ui(&user_library);
 
     user_library.set_to_add(differences.to_add);
