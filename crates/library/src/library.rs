@@ -10,9 +10,6 @@ use std::{
 const UNKNOWN: &str = "UNKNOWN";
 const BOOK_FORMATS: [&str; 1] = ["epub"];
 
-//TODO: Look at the example from bevy in /examples/ecs/state.rs
-//Reference to UI element (entity) is needed, so that it can be modified later on
-//This is not simple to do by using Component and Query, so it has to be done by using a Resource
 #[derive(Resource)]
 pub struct LibraryViewData {
     pub container_entity: Entity,
@@ -146,18 +143,6 @@ fn check_differences_in_books_on_ui(user_library: &UserLibrary) -> BookDifferenc
     BookDifference { to_add, to_remove }
 }
 
-fn print_current_time(method_name: &str) {
-    let start = SystemTime::now();
-    let since_the_epoch = start
-        .duration_since(UNIX_EPOCH)
-        .expect("Time went backwards");
-
-    let in_seconds = since_the_epoch.as_secs();
-
-    println!("{:?}", method_name.to_uppercase());
-    println!("{:?}", in_seconds);
-}
-
 #[derive(Resource, Deref, DerefMut)]
 pub struct RefreshLibraryTimer(pub Timer);
 
@@ -195,7 +180,7 @@ pub fn refresh_user_library_on_ui(
     for book_to_add in user_library.to_add.iter() {
         let sections = vec![
             TextSection {
-                value: "Name: ".to_string(),
+                value: "\nName: \n".to_string(),
                 style: TextStyle {
                     font_size: 20.0,
                     color: Color::BLACK,
@@ -211,7 +196,7 @@ pub fn refresh_user_library_on_ui(
                 },
             },
             TextSection {
-                value: "Author: ".to_string(),
+                value: "\nAuthor: \n".to_string(),
                 style: TextStyle {
                     font_size: 20.0,
                     color: Color::BLACK,
@@ -231,8 +216,8 @@ pub fn refresh_user_library_on_ui(
         let entity = commands
             .spawn(NodeBundle {
                 style: Style {
-                    width: Val::Px(120.0),
-                    height: Val::Px(240.0),
+                    width: Val::Px(200.0),
+                    height: Val::Px(300.0),
                     margin: UiRect::all(Val::Px(10.0)),
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,

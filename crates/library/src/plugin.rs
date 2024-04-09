@@ -9,8 +9,6 @@ use crate::library::{
     LibraryViewData, RefreshLibraryTimer, UserLibrary,
 };
 
-const LIBRARY_SCREEN: &str = "LIBRARY";
-
 #[derive(Component)]
 pub struct OnLibraryScreen;
 
@@ -38,32 +36,22 @@ impl Plugin for LibraryPlugin {
 
 fn library_setup(mut commands: Commands, main_screen_view_data: Res<MainScreenViewData>) {
     let library_screen_entity = commands
-        .spawn(NodeBundle {
-            style: Style {
-                align_items: AlignItems::FlexStart,
-                justify_content: JustifyContent::FlexStart,
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    align_items: AlignItems::FlexStart,
+                    align_content: AlignContent::FlexStart,
+                    justify_content: JustifyContent::FlexStart,
+                    flex_wrap: FlexWrap::Wrap,
+                    margin: UiRect::all(Val::Px(16.0)),
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
+                    ..default()
+                },
                 ..default()
             },
-            ..default()
-        })
-        .with_children(|parent| {
-            parent.spawn(
-                TextBundle::from_section(
-                    LIBRARY_SCREEN,
-                    TextStyle {
-                        font_size: 80.0,
-                        color: TEXT_COLOR,
-                        ..default()
-                    },
-                )
-                .with_style(Style {
-                    margin: UiRect::all(Val::Px(50.0)),
-                    ..default()
-                }),
-            );
-        })
+            OnLibraryScreen,
+        ))
         .id();
 
     commands
