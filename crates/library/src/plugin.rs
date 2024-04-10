@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_simple_scroll_view::{ScrollView, ScrollViewPlugin, ScrollableContent};
 use common::{
     screens::MainScreenViewData, states::NavigationState, text::TEXT_COLOR,
     utilities::despawn_screen,
@@ -16,7 +17,8 @@ pub struct LibraryPlugin;
 
 impl Plugin for LibraryPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(NavigationState::Library), (library_setup).chain())
+        app.add_plugins(ScrollViewPlugin)
+            .add_systems(OnEnter(NavigationState::Library), (library_setup).chain())
             .add_systems(
                 Update,
                 (
@@ -33,6 +35,11 @@ impl Plugin for LibraryPlugin {
             );
     }
 }
+
+const CLR_1: Color = Color::rgb(0.168, 0.168, 0.168);
+const CLR_2: Color = Color::rgb(0.109, 0.109, 0.109);
+const CLR_3: Color = Color::rgb(0.569, 0.592, 0.647);
+const CLR_4: Color = Color::rgb(0.902, 0.4, 0.004);
 
 fn library_setup(mut commands: Commands, main_screen_view_data: Res<MainScreenViewData>) {
     let library_screen_entity = commands
@@ -54,12 +61,69 @@ fn library_setup(mut commands: Commands, main_screen_view_data: Res<MainScreenVi
         ))
         .id();
 
+    let scroll_root = commands
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    width: Val::Percent(80.0),
+                    margin: UiRect::all(Val::Px(15.0)),
+                    ..default()
+                },
+                background_color: CLR_2.into(),
+                ..default()
+            },
+            ScrollView::default(),
+        ))
+        .with_children(|p| {
+            p.spawn((
+                NodeBundle {
+                    style: Style {
+                        flex_direction: bevy::ui::FlexDirection::Column,
+                        width: Val::Percent(100.0),
+                        ..default()
+                    },
+                    ..default()
+                },
+                ScrollableContent::default(),
+            ))
+            .with_children(|scroll_area| {
+                for i in 0..21 {
+                    scroll_area
+                        .spawn(NodeBundle {
+                            style: Style {
+                                min_width: Val::Px(200.0),
+                                margin: UiRect::all(Val::Px(15.0)),
+                                border: UiRect::all(Val::Px(5.0)),
+                                padding: UiRect::all(Val::Px(30.0)),
+                                ..default()
+                            },
+                            border_color: CLR_3.into(),
+                            ..default()
+                        })
+                        .with_children(|p| {
+                            p.spawn(
+                                TextBundle::from_section(
+                                    format!("Nr {git }", i),
+                                    TextStyle {
+                                        font_size: 25.0,
+                                        color: CLR_3,
+                                        ..default()
+                                    },
+                                )
+                                .with_text_justify(JustifyText::Center),
+                            );
+                        });
+                }
+            });
+        })
+        .id();
+
     commands
         .entity(main_screen_view_data.container_entity)
-        .push_children(&[library_screen_entity]);
+        .push_children(&[scroll_root]);
 
     commands.insert_resource(LibraryViewData {
-        container_entity: library_screen_entity,
+        container_entity: scroll_root,
     });
 
     commands.insert_resource(RefreshLibraryTimer(Timer::from_seconds(
