@@ -10,4 +10,3 @@ bevy = "0.13.0"
 directories = "5.0.1"
 epub = { path = "../epub" }
 common = { path = "../common" }
-bevy_simple_scroll_view = "0.1.0"
