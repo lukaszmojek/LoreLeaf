@@ -56,10 +56,11 @@ impl UserLibrary {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Component)]
 pub struct Book {
     name: String,
     author: String,
+    path: String,
 }
 
 impl Book {
@@ -67,6 +68,7 @@ impl Book {
         Self {
             name: ebook.metadata.title.unwrap_or(UNKNOWN.to_string()),
             author: ebook.metadata.creator.unwrap_or(UNKNOWN.to_string()),
+            path: ebook.path,
         }
     }
 }
@@ -213,7 +215,7 @@ pub fn refresh_user_library_on_ui(
         ];
 
         let entity = commands
-            .spawn(NodeBundle {
+            .spawn(ButtonBundle {
                 style: Style {
                     width: Val::Px(200.0),
                     height: Val::Px(300.0),
@@ -228,6 +230,7 @@ pub fn refresh_user_library_on_ui(
             })
             .with_children(|parent| {
                 parent.spawn(TextBundle::from_sections(sections));
+                parent.spawn(book_to_add.clone());
             })
             .id();
 
@@ -237,6 +240,24 @@ pub fn refresh_user_library_on_ui(
     }
 
     user_library.all_added();
+}
+
+pub fn book_interaction_system(
+    mut interaction_query: Query<
+        (&Interaction, &mut BorderColor, &Book),
+        (Changed<Interaction>, With<Book>),
+    >,
+) {
+    // println!("{:?}", interaction_query);
+
+    for (interaction, mut border_color, book) in &mut interaction_query {
+        println!("{:?}", interaction);
+
+        match *interaction {
+            Interaction::Pressed => println!("{:?}", book.path),
+            _ => {}
+        }
+    }
 }
 
 #[cfg(test)]
@@ -281,15 +302,18 @@ mod check_differences_in_books_on_ui_tests {
             Book {
                 name: "Name 1".to_string(),
                 author: "Author 1".to_string(),
+                path: "".to_string(),
             },
             Book {
                 name: "Name 2".to_string(),
                 author: "Author 2".to_string(),
+                path: "".to_string(),
             },
         ];
         let displayed = vec![Book {
             name: "Name 1".to_string(),
             author: "Author 1".to_string(),
+            path: "".to_string(),
         }];
         user_library.set_detected(detected);
         user_library.set_displayed(displayed);
@@ -306,15 +330,18 @@ mod check_differences_in_books_on_ui_tests {
         let detected = vec![Book {
             name: "Name 1".to_string(),
             author: "Author 1".to_string(),
+            path: "".to_string(),
         }];
         let displayed = vec![
             Book {
                 name: "Name 1".to_string(),
                 author: "Author 1".to_string(),
+                path: "".to_string(),
             },
             Book {
                 name: "Name 2".to_string(),
                 author: "Author 2".to_string(),
+                path: "".to_string(),
             },
         ];
         user_library.set_detected(detected);
@@ -332,10 +359,12 @@ mod check_differences_in_books_on_ui_tests {
         let books = vec![Book {
             name: "Name 2".to_string(),
             author: "Author 2".to_string(),
+            path: "".to_string(),
         }];
         let displayed = vec![Book {
             name: "Name 3".to_string(),
             author: "Author 3".to_string(),
+            path: "".to_string(),
         }];
         user_library.set_detected(books);
         user_library.set_displayed(displayed);

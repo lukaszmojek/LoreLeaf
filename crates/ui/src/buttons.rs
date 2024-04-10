@@ -46,14 +46,13 @@ impl ButtonConfiguration {
 // TODO: Check previous query
 pub fn button_system(
     mut interaction_query: Query<
-        (&Interaction, &mut UiImage, &mut BorderColor, &Children),
+        (&Interaction, &mut BorderColor),
         (Changed<Interaction>, With<Button>),
     >,
-    mut text_query: Query<&mut Text>,
 ) {
     // println!("{:?}", interaction_query);
 
-    for (interaction, mut image, mut border_color, children) in &mut interaction_query {
+    for (interaction, mut border_color) in &mut interaction_query {
         println!("{:?}", interaction);
 
         border_color.0 = match *interaction {

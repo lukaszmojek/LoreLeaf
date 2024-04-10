@@ -17,6 +17,7 @@ use crate::metadata::BookMetadata;
 
 pub struct EBook {
     pub metadata: BookMetadata,
+    pub path: String,
     spine: BookSpine,
     manifest: BookManifest,
     table_of_contents: TableOfContents,
@@ -118,11 +119,11 @@ impl TableOfContents {
 
 impl EBook {
     pub fn read_epub(epub_path: String) -> Result<(EBook), Box<dyn std::error::Error>> {
-        let epub_file = File::open(epub_path)?;
+        let epub_file = File::open(epub_path.clone())?;
         let mut archive = ZipArchive::new(epub_file)?;
 
         let opf_path = EBook::parse_container(&mut archive)?;
-        let book = EBook::parse_opf(&mut archive, &opf_path)?;
+        let book = EBook::parse_opf(&mut archive, &opf_path, epub_path)?;
 
         Ok(book)
     }
@@ -174,6 +175,7 @@ impl EBook {
     fn parse_opf(
         zip: &mut ZipArchive<File>,
         opf_path: &str,
+        epub_path: String,
     ) -> Result<EBook, Box<dyn std::error::Error>> {
         let opf_content = EBook::get_archive_file_content(zip, opf_path).unwrap_or_else(|err| {
             eprintln!("{:?}", err);
@@ -187,10 +189,11 @@ impl EBook {
         let table_of_contents =
             EBook::create_table_of_contents(zip, &manifest, content_dir.borrow());
 
-        Ok(EBook {
+        Ok(Self {
             manifest,
             spine,
             metadata,
+            path: epub_path,
             table_of_contents,
             _content_dir: content_dir,
         })

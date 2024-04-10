@@ -5,8 +5,8 @@ use common::{
 };
 
 use crate::library::{
-    compare_books_in_user_library, detect_books_in_library, refresh_user_library_on_ui,
-    LibraryViewData, RefreshLibraryTimer, UserLibrary,
+    book_interaction_system, compare_books_in_user_library, detect_books_in_library,
+    refresh_user_library_on_ui, LibraryViewData, RefreshLibraryTimer, UserLibrary,
 };
 
 #[derive(Component)]
@@ -26,6 +26,10 @@ impl Plugin for LibraryPlugin {
                 )
                     .chain()
                     .run_if(in_state(NavigationState::Library)),
+            )
+            .add_systems(
+                Update,
+                (book_interaction_system).run_if(in_state(NavigationState::Library)),
             )
             .add_systems(
                 OnExit(NavigationState::Library),
