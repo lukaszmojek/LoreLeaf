@@ -1,5 +1,5 @@
 use bevy::{asset::load_internal_binary_asset, prelude::*, winit::WinitSettings};
-use ui::screens::LoreLeafState;
+use ui::state::LoreLeafState;
 
 const LORE_LEAF_TITLE: &str = "LoreLeaf";
 

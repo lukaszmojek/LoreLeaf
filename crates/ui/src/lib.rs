@@ -1,7 +1,8 @@
 mod buttons;
-pub mod screens;
+pub mod state;
 
-use screens::{home, splash};
+pub mod home;
+pub mod splash;
 
 pub use home::HomePlugin;
 pub use splash::SplashPlugin;
