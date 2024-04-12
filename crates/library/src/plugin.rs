@@ -1,8 +1,5 @@
 use bevy::prelude::*;
-use common::{
-    screens::MainScreenViewData, states::NavigationState, text::TEXT_COLOR,
-    utilities::despawn_screen,
-};
+use common::{screens::MainScreenViewData, states::NavigationState, utilities::despawn_screen};
 
 use crate::library::{
     book_interaction_system, compare_books_in_user_library, detect_books_in_library,

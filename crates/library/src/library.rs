@@ -1,11 +1,9 @@
 use bevy::prelude::*;
-use common::utilities::print_current_time;
 use directories::UserDirs;
 use epub::EBook;
 use std::{
     fs::{self, DirEntry},
     path::Path,
-    time::{SystemTime, UNIX_EPOCH},
 };
 
 const UNKNOWN: &str = "UNKNOWN";
@@ -215,22 +213,24 @@ pub fn refresh_user_library_on_ui(
         ];
 
         let entity = commands
-            .spawn(ButtonBundle {
-                style: Style {
-                    width: Val::Px(200.0),
-                    height: Val::Px(300.0),
-                    margin: UiRect::all(Val::Px(10.0)),
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    border: UiRect::all(Val::Px(5.0)),
+            .spawn((
+                ButtonBundle {
+                    style: Style {
+                        width: Val::Px(200.0),
+                        height: Val::Px(300.0),
+                        margin: UiRect::all(Val::Px(10.0)),
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        border: UiRect::all(Val::Px(5.0)),
+                        ..default()
+                    },
+                    background_color: BackgroundColor::from(Color::GREEN),
                     ..default()
                 },
-                background_color: BackgroundColor::from(Color::GREEN),
-                ..default()
-            })
+                book_to_add.clone(),
+            ))
             .with_children(|parent| {
                 parent.spawn(TextBundle::from_sections(sections));
-                parent.spawn(book_to_add.clone());
             })
             .id();
 
@@ -243,19 +243,11 @@ pub fn refresh_user_library_on_ui(
 }
 
 pub fn book_interaction_system(
-    mut interaction_query: Query<
-        (&Interaction, &mut BorderColor, &Book),
-        (Changed<Interaction>, With<Book>),
-    >,
+    mut interaction_query: Query<(&Interaction, &Book), Changed<Interaction>>,
 ) {
-    // println!("{:?}", interaction_query);
-
-    for (interaction, mut border_color, book) in &mut interaction_query {
-        println!("{:?}", interaction);
-
-        match *interaction {
-            Interaction::Pressed => println!("{:?}", book.path),
-            _ => {}
+    for (interaction, book) in &mut interaction_query {
+        if let Interaction::Pressed = *interaction {
+            println!("{:?}", book.path)
         }
     }
 }
