@@ -6,6 +6,8 @@ use std::{
     path::Path,
 };
 
+use crate::book_tile::BookTileBundle;
+
 const UNKNOWN: &str = "UNKNOWN";
 const BOOK_FORMATS: [&str; 1] = ["epub"];
 
@@ -213,22 +215,7 @@ pub fn refresh_user_library_on_ui(
         ];
 
         let entity = commands
-            .spawn((
-                ButtonBundle {
-                    style: Style {
-                        width: Val::Px(200.0),
-                        height: Val::Px(300.0),
-                        margin: UiRect::all(Val::Px(10.0)),
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        border: UiRect::all(Val::Px(5.0)),
-                        ..default()
-                    },
-                    background_color: BackgroundColor::from(Color::GREEN),
-                    ..default()
-                },
-                book_to_add.clone(),
-            ))
+            .spawn(BookTileBundle::new(book_to_add.to_owned()))
             .with_children(|parent| {
                 parent.spawn(TextBundle::from_sections(sections));
             })
