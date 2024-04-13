@@ -215,7 +215,7 @@ pub fn refresh_user_library_on_ui(
         ];
 
         let entity = commands
-            .spawn(BookTileBundle::new(book_to_add.to_owned()))
+            .spawn(BookTileBundle::new(book_to_add.to_owned(), None))
             .with_children(|parent| {
                 parent.spawn(TextBundle::from_sections(sections));
             })
