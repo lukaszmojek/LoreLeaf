@@ -7,7 +7,7 @@ use quick_xml::events::Event;
 use quick_xml::name::QName;
 use quick_xml::Reader;
 use spine::BookSpine;
-use std::borrow::Borrow;
+use std::borrow::{Borrow, BorrowMut};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -18,11 +18,15 @@ use crate::metadata::BookMetadata;
 pub struct EBook {
     pub metadata: BookMetadata,
     pub path: String,
+    archive: ZipArchive<File>,
     spine: BookSpine,
     manifest: BookManifest,
     table_of_contents: TableOfContents,
     _content_dir: PathBuf,
+    // pub reader: EBookReader,
 }
+
+// struct EBookReader {}
 
 struct TableOfContents {
     items: Vec<TableOfContentsItem>,
@@ -35,7 +39,7 @@ struct TableOfContentsItem {
 }
 
 impl TableOfContentsItem {
-    pub fn get_href(e: &quick_xml::events::BytesStart<'_>) -> String {
+    pub fn get_href_attribute(e: &quick_xml::events::BytesStart<'_>) -> String {
         let mut href: String = "".to_string();
 
         for attribute in e.attributes() {
@@ -81,7 +85,7 @@ impl TableOfContents {
                     });
 
                     if let b"a" = e.name().as_ref() {
-                        toc_item_href = TableOfContentsItem::get_href(e);
+                        toc_item_href = TableOfContentsItem::get_href_attribute(e);
                         toc_item_reading_started = true;
                     }
                 }
@@ -123,7 +127,7 @@ impl EBook {
         let mut archive = ZipArchive::new(epub_file)?;
 
         let opf_path = EBook::parse_container(&mut archive)?;
-        let book = EBook::parse_opf(&mut archive, &opf_path, epub_path)?;
+        let book = EBook::parse_opf(archive, &opf_path, epub_path)?;
 
         Ok(book)
     }
@@ -173,21 +177,22 @@ impl EBook {
 
     /// Assume `opf_path` is the path obtained from the previous step
     fn parse_opf(
-        zip: &mut ZipArchive<File>,
+        mut zip: ZipArchive<File>,
         opf_path: &str,
         epub_path: String,
     ) -> Result<EBook, Box<dyn std::error::Error>> {
-        let opf_content = EBook::get_archive_file_content(zip, opf_path).unwrap_or_else(|err| {
-            eprintln!("{:?}", err);
-            "NONE".to_string()
-        });
+        let opf_content = EBook::get_archive_file_content(zip.borrow_mut(), opf_path)
+            .unwrap_or_else(|err| {
+                eprintln!("{:?}", err);
+                "NONE".to_string()
+            });
 
         let content_dir = std::path::Path::new(opf_path).parent().unwrap().to_owned();
 
         let (manifest, spine, metadata) = EBook::create_from_opf(&opf_content);
 
         let table_of_contents =
-            EBook::create_table_of_contents(zip, &manifest, content_dir.borrow());
+            EBook::create_table_of_contents(zip.borrow_mut(), &manifest, content_dir.borrow());
 
         Ok(Self {
             manifest,
@@ -196,6 +201,7 @@ impl EBook {
             path: epub_path,
             table_of_contents,
             _content_dir: content_dir,
+            archive: zip,
         })
     }
 
@@ -222,9 +228,10 @@ impl EBook {
         zip: &mut ZipArchive<File>,
         resource_path: &str,
     ) -> Result<String, Box<dyn std::error::Error>> {
-        let mut opf_file = zip.by_name(resource_path)?;
+        let mut resource_file = zip.by_name(resource_path)?;
         let mut contents = String::new();
-        opf_file.read_to_string(&mut contents)?;
+
+        resource_file.read_to_string(&mut contents)?;
 
         Ok(contents)
     }
@@ -236,6 +243,17 @@ impl EBook {
 
         (manifest, spine, metadata)
     }
+
+    // fn get_content_by_toc_item(
+    //     &self,
+    //     resource_path: &str,
+    // ) -> Result<String, Box<dyn std::error::Error>> {
+    //     let mut opf_file = zip.by_name(resource_path)?;
+    //     let mut contents = String::new();
+    //     opf_file.read_to_string(&mut contents)?;
+
+    //     Ok(contents)
+    // }
 }
 
 #[cfg(test)]
@@ -369,7 +387,7 @@ mod table_of_contents_tests {
     use super::*;
 
     #[test]
-    fn search_for_item_should_return_matching_item_when_queried() {
+    fn should_contain_properly_read_items_of_the_book() {
         let book = EBook::read_epub("./data/moby-dick.epub".to_string()).unwrap();
 
         let table_of_contents = book.table_of_contents;
