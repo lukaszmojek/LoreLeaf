@@ -26,12 +26,12 @@ pub struct EBook {
     // pub reader: EBookReader,
 }
 
-// struct EBookReader {}
-
+#[derive(Clone)]
 struct TableOfContents {
     items: Vec<TableOfContentsItem>,
 }
 
+#[derive(Debug, Clone)]
 struct TableOfContentsItem {
     // id: String,
     href: String,
@@ -244,16 +244,18 @@ impl EBook {
         (manifest, spine, metadata)
     }
 
-    // fn get_content_by_toc_item(
-    //     &self,
-    //     resource_path: &str,
-    // ) -> Result<String, Box<dyn std::error::Error>> {
-    //     let mut opf_file = zip.by_name(resource_path)?;
-    //     let mut contents = String::new();
-    //     opf_file.read_to_string(&mut contents)?;
+    fn get_content_by_toc_item(
+        &mut self,
+        toc_item: &TableOfContentsItem,
+    ) -> Result<String, Box<dyn std::error::Error>> {
+        println!("{:?}", toc_item);
+        let mut opf_file = self.archive.by_name(&toc_item.href)?;
+        let mut contents = String::new();
 
-    //     Ok(contents)
-    // }
+        opf_file.read_to_string(&mut contents)?;
+
+        Ok(contents)
+    }
 }
 
 #[cfg(test)]
@@ -407,5 +409,24 @@ mod table_of_contents_tests {
             table_of_contents.items[toc_length - 3].label,
             "Chapter 135. The Chase.—Third Day."
         );
+    }
+
+    #[test]
+    fn reader_should_get_the_content_based_on_toc_item() {
+        let mut book = EBook::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+
+        let table_of_contents = book.table_of_contents.clone();
+
+        let toc_length = table_of_contents.items.len();
+        let selected_toc_item = table_of_contents.items[toc_length - 3].clone();
+
+        let toc_item_content = book.get_content_by_toc_item(&selected_toc_item).unwrap();
+
+        assert_eq!(selected_toc_item.href, "chapter_135.xhtml");
+        assert_eq!(
+            selected_toc_item.label,
+            "Chapter 135. The Chase.—Third Day."
+        );
+        assert_eq!(toc_item_content.len(), 26305);
     }
 }
