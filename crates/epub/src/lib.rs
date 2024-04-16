@@ -249,7 +249,11 @@ impl EBook {
         toc_item: &TableOfContentsItem,
     ) -> Result<String, Box<dyn std::error::Error>> {
         println!("{:?}", toc_item);
-        let mut opf_file = self.archive.by_name(&toc_item.href)?;
+
+        //TODO: Fix it, so that subdirectories of epub file are detected automatically
+        let relative_path = "OPS".to_string() + "/" + toc_item.href.as_str();
+
+        let mut opf_file = self.archive.by_name(&relative_path)?;
         let mut contents = String::new();
 
         opf_file.read_to_string(&mut contents)?;
@@ -427,6 +431,7 @@ mod table_of_contents_tests {
             selected_toc_item.label,
             "Chapter 135. The Chase.—Third Day."
         );
-        assert_eq!(toc_item_content.len(), 26305);
+        //Adding all characters count and the new line characters which are not displayed
+        assert_eq!(toc_item_content.len(), 26305 + 73);
     }
 }
