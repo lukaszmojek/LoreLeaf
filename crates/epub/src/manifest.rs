@@ -10,7 +10,7 @@ pub struct BookManifest {
 }
 
 impl BookManifest {
-    pub fn from_opf(opf_content: &String) -> BookManifest {
+    pub fn from_opf(opf_content: &str) -> BookManifest {
         let mut reader = Reader::from_str(opf_content);
         reader.trim_text(true);
 

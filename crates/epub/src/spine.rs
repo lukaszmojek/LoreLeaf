@@ -16,7 +16,7 @@ pub struct BookSpineItem {
 }
 
 impl BookSpine {
-    pub fn from_opf_and_manifest(opf_content: &String, manifest: &BookManifest) -> BookSpine {
+    pub fn from_opf_and_manifest(opf_content: &str, manifest: &BookManifest) -> BookSpine {
         let mut reader = Reader::from_str(opf_content);
         reader.trim_text(true);
 

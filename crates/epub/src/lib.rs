@@ -25,7 +25,7 @@ pub struct EBook {
     manifest: BookManifest,
     table_of_contents: TableOfContents,
     _content_dir: PathBuf,
-    // pub reader: EBookReader,
+    // pub reader_current_item: Option<TableOfContentsItem>,
 }
 
 impl EBook {
