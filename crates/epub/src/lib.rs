@@ -28,8 +28,15 @@ pub struct EBook {
     // pub reader_current_item: Option<TableOfContentsItem>,
 }
 
+/// The path to the container.xml file in the META-INF directory
+/// This file contains the path to the OPF file
+/// Based on the epub 3.3 standard
+/// https://www.w3.org/TR/epub-33/#sec-parsing-urls-metainf
+/// 4.2.6.3.1
+pub const META_INF_CONTAINER_PATH: &str = "META-INF/container.xml";
+
 impl EBook {
-    pub fn read_epub(epub_path: String) -> Result<(EBook), Box<dyn std::error::Error>> {
+    pub fn read_epub(epub_path: String) -> Result<EBook, Box<dyn std::error::Error>> {
         let epub_file = File::open(epub_path.clone())?;
         let mut archive = ZipArchive::new(epub_file)?;
 
@@ -41,7 +48,7 @@ impl EBook {
 
     fn parse_container(zip: &mut ZipArchive<File>) -> Result<String, Box<dyn std::error::Error>> {
         //TODO: Check whether that should be dynamic of is it a standard for EPUBs
-        let mut container_file = zip.by_name("META-INF/container.xml")?;
+        let mut container_file = zip.by_name(META_INF_CONTAINER_PATH)?;
         let mut contents = String::new();
         container_file.read_to_string(&mut contents)?;
 
@@ -94,6 +101,8 @@ impl EBook {
                 "NONE".to_string()
             });
 
+        //TODO: Looks really junky to do it like this, potential for improvement in getting content_dir path
+        //If OPS directory is a common thing for all books it should be hardcoded, if not, then some better way for getting root directory for book resources will be needed
         let content_dir = std::path::Path::new(opf_path).parent().unwrap().to_owned();
 
         let (manifest, spine, metadata) = EBook::create_from_opf(&opf_content);
@@ -128,7 +137,7 @@ impl EBook {
                 "NONE".to_string()
             });
 
-        TableOfContents::from_content(toc_content)
+        TableOfContents::from_toc_content(toc_content)
     }
 
     fn get_archive_file_content(
