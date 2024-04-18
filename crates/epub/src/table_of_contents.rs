@@ -13,7 +13,7 @@ pub struct TableOfContents {
 #[derive(Debug, Clone)]
 pub struct TableOfContentsItem {
     // id: String,
-    pub href: String,
+    pub path: String,
     pub label: String,
     pub content: Option<String>,
 }
@@ -82,7 +82,7 @@ impl TableOfContents {
                     }
 
                     let toc_item = TableOfContentsItem {
-                        href: toc_item_href,
+                        path: toc_item_href,
                         label: toc_item_label,
                         content: None,
                     };
@@ -103,8 +103,53 @@ impl TableOfContents {
 }
 
 #[cfg(test)]
-mod tests {
+mod table_of_contents_tests {
+    use crate::EBook;
+
     use super::*;
+
+    #[test]
+    fn should_contain_properly_read_items_of_the_book() {
+        let book = EBook::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+
+        let table_of_contents = book.table_of_contents;
+
+        let toc_length = table_of_contents.items.len();
+
+        assert_eq!(toc_length, 141);
+
+        assert_eq!(table_of_contents.items[0].path, "titlepage.xhtml");
+        assert_eq!(table_of_contents.items[0].label, "Moby-Dick");
+
+        assert_eq!(
+            table_of_contents.items[toc_length - 3].path,
+            "chapter_135.xhtml"
+        );
+        assert_eq!(
+            table_of_contents.items[toc_length - 3].label,
+            "Chapter 135. The Chase.—Third Day."
+        );
+    }
+
+    #[test]
+    fn reader_should_get_the_content_based_on_toc_item() {
+        let mut book = EBook::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+
+        let table_of_contents = book.table_of_contents.clone();
+
+        let toc_length = table_of_contents.items.len();
+        let selected_toc_item = table_of_contents.items[toc_length - 3].clone();
+
+        let toc_item_content = book.get_content_by_toc_item(&selected_toc_item).unwrap();
+
+        assert_eq!(selected_toc_item.path, "chapter_135.xhtml");
+        assert_eq!(
+            selected_toc_item.label,
+            "Chapter 135. The Chase.—Third Day."
+        );
+        //Adding all characters count and the new line characters which are not displayed
+        assert_eq!(toc_item_content.len(), 26305 + 73);
+    }
 
     #[test]
     fn get_first_toc_item() {
@@ -555,6 +600,6 @@ mod tests {
         let sut = TableOfContents::from_content(content.to_string());
 
         let toc_iter = sut.items.iter();
-        assert_eq!("s")
+        // assert_eq!("s");
     }
 }
