@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use directories::UserDirs;
-use epub::EBook;
+use epub::epub::EBook;
 use std::{
     fs::{self, DirEntry},
     path::Path,

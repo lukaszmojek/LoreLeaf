@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, collections::LinkedList};
+use std::{borrow::Borrow, collections::LinkedList, path::Path};
 
 use quick_xml::{events::Event, name::QName, Reader};
 
@@ -35,7 +35,7 @@ impl TableOfContentsItem {
 }
 
 impl TableOfContents {
-    pub fn from_content(toc_content: String) -> TableOfContents {
+    pub fn from_toc_content(toc_content: String) -> TableOfContents {
         let mut reader = Reader::from_str(toc_content.borrow());
         reader.trim_text(true);
 
@@ -104,13 +104,14 @@ impl TableOfContents {
 
 #[cfg(test)]
 mod table_of_contents_tests {
-    use crate::EBook;
+    use crate::epub::EBook;
 
     use super::*;
+    const MOBY_DICK_PATH: &str = "./data/moby-dick.epub";
 
     #[test]
     fn should_contain_properly_read_items_of_the_book() {
-        let book = EBook::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+        let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
 
         let table_of_contents = book.table_of_contents;
 
@@ -133,7 +134,7 @@ mod table_of_contents_tests {
 
     #[test]
     fn reader_should_get_the_content_based_on_toc_item() {
-        let mut book = EBook::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+        let mut book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
 
         let table_of_contents = book.table_of_contents.clone();
 
@@ -597,7 +598,7 @@ mod table_of_contents_tests {
         </html>
 "#;
 
-        let sut = TableOfContents::from_content(content.to_string());
+        let sut = TableOfContents::from_toc_content(content.to_string());
 
         let toc_iter = sut.items.iter();
         // assert_eq!("s");

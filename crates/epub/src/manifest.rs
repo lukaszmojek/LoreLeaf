@@ -93,3 +93,25 @@ impl PartialEq for ManifestItem {
         self.id == other.id && self.href == other.href && self.media_type == other.media_type
     }
 }
+
+#[cfg(test)]
+mod manifest_tests {
+    use crate::epub::EBook;
+
+    use super::*;
+
+    #[test]
+    fn search_for_item_should_return_matching_item_when_queried() {
+        let book = EBook::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+
+        let manifest = book.manifest;
+
+        let toc_from_manifest = manifest
+            .search_for_item("toc")
+            .unwrap_or_else(|| panic!("toc was not found during search in manifest"));
+
+        assert_eq!(toc_from_manifest.id, "toc");
+        assert_eq!(toc_from_manifest.href, "toc.xhtml");
+        assert_eq!(toc_from_manifest.media_type, "application/xhtml+xml");
+    }
+}
