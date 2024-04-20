@@ -1,5 +1,6 @@
 use std::{
     borrow::{Borrow, BorrowMut},
+    cell::RefCell,
     fs::File,
     io::Read,
     path::{Path, PathBuf},
@@ -18,7 +19,7 @@ use crate::{
 pub struct EBook {
     pub metadata: BookMetadata,
     pub path: String,
-    archive: ZipArchive<File>,
+    archive: RefCell<ZipArchive<File>>,
     spine: BookSpine,
     pub manifest: BookManifest,
     pub table_of_contents: TableOfContents,
@@ -106,7 +107,7 @@ impl EBook {
         let (manifest, spine, metadata) = EBook::create_from_opf(&opf_content);
 
         let table_of_contents =
-            EBook::create_table_of_contents(zip.borrow_mut(), &manifest, content_dir.borrow());
+            TableOfContents::create_table_of_contents(zip.borrow_mut(), &manifest, content_dir.borrow());
 
         Ok(Self {
             manifest,
@@ -115,30 +116,11 @@ impl EBook {
             path: epub_path,
             table_of_contents,
             _content_dir: content_dir,
-            archive: zip,
+            archive: RefCell::new(zip),
         })
     }
 
-    fn create_table_of_contents(
-        zip: &mut ZipArchive<File>,
-        manifest: &BookManifest,
-        content_dir: &Path,
-    ) -> TableOfContents {
-        // todo!("Href here is not absolute, it is relative to opf file. This needs to be addressed.");
-        let table_of_contents_from_manifest = manifest.search_for_item("toc").unwrap();
-
-        let toc_path = content_dir.join(table_of_contents_from_manifest.href.clone());
-
-        let toc_content = EBook::get_archive_file_content(zip, toc_path.to_str().unwrap())
-            .unwrap_or_else(|err| {
-                eprintln!("{:?}", err);
-                "NONE".to_string()
-            });
-
-        TableOfContents::from_toc_content(toc_content)
-    }
-
-    fn get_archive_file_content(
+    pub(crate) fn get_archive_file_content(
         zip: &mut ZipArchive<File>,
         resource_path: &str,
     ) -> Result<String, Box<dyn std::error::Error>> {
@@ -164,20 +146,13 @@ impl EBook {
     ) -> Result<String, Box<dyn std::error::Error>> {
         //TODO: Fix it, so that subdirectories of epub file are detected automatically
 
-        let relative_path = self.get_resource_path(&toc_item.path);
-
-        let mut opf_file = self.archive.by_name(&relative_path)?;
+        let mut archive = self.archive.borrow_mut();
+        let mut target_file_content = archive.by_name(&toc_item.path)?;
         let mut contents = String::new();
 
-        opf_file.read_to_string(&mut contents)?;
+        target_file_content.read_to_string(&mut contents)?;
 
         Ok(contents)
-    }
-
-    fn get_resource_path(&mut self, item_href: &str) -> String {
-        let relative_path = self._content_dir.to_str().unwrap_or("").to_string() + "/" + item_href;
-
-        relative_path
     }
 }
 
