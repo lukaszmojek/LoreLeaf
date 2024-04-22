@@ -3,7 +3,7 @@ use std::{
     cell::RefCell,
     fs::File,
     io::Read,
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
 
 use quick_xml::{events::Event, name::QName, Reader};
@@ -106,8 +106,11 @@ impl EBook {
 
         let (manifest, spine, metadata) = EBook::create_from_opf(&opf_content);
 
-        let table_of_contents =
-            TableOfContents::create_table_of_contents(zip.borrow_mut(), &manifest, content_dir.borrow());
+        let table_of_contents = TableOfContents::create_table_of_contents(
+            zip.borrow_mut(),
+            &manifest,
+            content_dir.borrow(),
+        );
 
         Ok(Self {
             manifest,
