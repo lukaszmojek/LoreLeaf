@@ -19,7 +19,7 @@ use crate::{
 pub struct EBook {
     pub metadata: BookMetadata,
     pub path: String,
-    archive: RefCell<ZipArchive<File>>,
+    archive: RefCell<ZipArchive<File>>, //This probably should be moved to a separate struct
     spine: BookSpine,
     pub manifest: BookManifest,
     pub table_of_contents: TableOfContents,
