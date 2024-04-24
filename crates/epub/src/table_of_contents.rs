@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, cell::RefCell, fs::File, path::Path};
+use std::{borrow::Borrow, fs::File, path::Path};
 
 use quick_xml::{events::Event, name::QName, Reader};
 use zip::ZipArchive;
@@ -12,13 +12,19 @@ pub struct TableOfContents {
 
 #[derive(Debug, Clone)]
 pub struct TableOfContentsItem {
-    // id: String,
     pub path: String,
     pub label: String,
     pub content: Option<String>,
 }
 
+impl PartialEq for TableOfContentsItem {
+    fn eq(&self, other: &Self) -> bool {
+        self.path == other.path && self.label == other.label
+    }
+}
+
 impl TableOfContentsItem {
+    //TODO: Pass down content dir from EBook
     pub fn get_href_attribute(e: &quick_xml::events::BytesStart<'_>) -> String {
         let mut href: String = "".to_string();
 
@@ -119,6 +125,10 @@ impl TableOfContents {
 
         TableOfContents { items: toc_items }
     }
+
+    pub fn search_for_item(&self, href: &str) -> Option<&TableOfContentsItem> {
+        self.items.iter().find(|item| item.path == href)
+    }
 }
 
 #[cfg(test)]
@@ -169,5 +179,38 @@ mod table_of_contents_tests {
         );
         //Adding all characters count and the new line characters which are not displayed
         assert_eq!(toc_item_content.len(), 26305 + 73);
+    }
+
+    #[test]
+    fn search_should_return_some_with_existing_toc_item_when_it_matches_search_criteria() {
+        //arrange
+        let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
+        let table_of_contents = book.table_of_contents.to_owned();
+        let expected_toc_item = TableOfContentsItem {
+            label: "Chapter 135. The Chase.—Third Day.".to_string(),
+            path: "OPS/chapter_135.xhtml".to_string(),
+            content: None,
+        };
+
+        //act
+        let found_toc_item = table_of_contents
+            .search_for_item(&expected_toc_item.path)
+            .unwrap();
+
+        //assert
+        assert_eq!(expected_toc_item, *found_toc_item);
+    }
+
+    #[test]
+    fn search_should_return_none_when_no_toc_item_matches_search_criteria() {
+        //arrange
+        let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
+        let table_of_contents = book.table_of_contents.to_owned();
+
+        //act
+        let found_toc_item = table_of_contents.search_for_item("OPS/chapter_666.xhtml");
+
+        //assert
+        assert!(found_toc_item.is_none());
     }
 }

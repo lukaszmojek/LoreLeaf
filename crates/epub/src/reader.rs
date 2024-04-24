@@ -5,6 +5,7 @@ pub struct EBookReader {
     session: ReadingSession,
 }
 
+#[derive(Clone)]
 struct ReadingSession {
     current: Chapter,
     next: Option<Chapter>,
@@ -29,7 +30,7 @@ impl EBookReader {
     }
 
     pub fn current_chapter(&self) -> Chapter {
-        todo!()
+        self.session.current.clone()
     }
 
     pub fn move_to_next_chapter(&self) {
@@ -41,7 +42,7 @@ impl EBookReader {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Chapter {
     pub path: String,
     pub label: String,
