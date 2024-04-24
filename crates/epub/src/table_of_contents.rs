@@ -129,6 +129,37 @@ impl TableOfContents {
     pub fn search_for_item(&self, href: &str) -> Option<&TableOfContentsItem> {
         self.items.iter().find(|item| item.path == href)
     }
+
+    fn previous_relative(
+        &self,
+        current_toc_item: TableOfContentsItem,
+    ) -> Option<&TableOfContentsItem> {
+        if self.items.starts_with(&[current_toc_item.clone()]) {
+            return None;
+        }
+
+        for (index, item) in self.items.iter().enumerate() {
+            if item == &current_toc_item {
+                return Some(&self.items[index - 1]);
+            }
+        }
+
+        None
+    }
+
+    fn next_relative(&self, current_toc_item: TableOfContentsItem) -> Option<&TableOfContentsItem> {
+        if self.items.ends_with(&[current_toc_item.clone()]) {
+            return None;
+        }
+
+        for (index, item) in self.items.iter().enumerate() {
+            if item == &current_toc_item {
+                return Some(&self.items[index + 1]);
+            }
+        }
+
+        None
+    }
 }
 
 #[cfg(test)]
@@ -212,5 +243,90 @@ mod table_of_contents_tests {
 
         //assert
         assert!(found_toc_item.is_none());
+    }
+
+    #[test]
+    fn get_next_relative_should_return_some_with_existing_toc_item_when_there_is_next_toc_item() {
+        //arrange
+        let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
+        let table_of_contents = book.table_of_contents.to_owned();
+        let current_toc_item = TableOfContentsItem {
+            label: "Chapter 135. The Chase.—Third Day.".to_string(),
+            path: "OPS/chapter_135.xhtml".to_string(),
+            content: None,
+        };
+        let expected_toc_item = TableOfContentsItem {
+            label: "Epilogue".to_string(),
+            path: "OPS/chapter_136.xhtml".to_string(),
+            content: None,
+        };
+
+        //act
+        let next_toc_item = table_of_contents.next_relative(current_toc_item).unwrap();
+
+        //assert
+        assert_eq!(expected_toc_item, *next_toc_item);
+    }
+
+    #[test]
+    fn get_next_relative_should_return_none_when_there_is_no_next_toc_item() {
+        //arrange
+        let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
+        let table_of_contents = book.table_of_contents.to_owned();
+        let current_toc_item = TableOfContentsItem {
+            label: "Copyright Page".to_string(),
+            path: "OPS/copyright.xhtml".to_string(),
+            content: None,
+        };
+
+        //act
+        let next_toc_item = table_of_contents.next_relative(current_toc_item);
+
+        //assert
+        assert!(next_toc_item.is_none());
+    }
+
+    #[test]
+    fn get_previous_relative_should_return_some_with_existing_toc_item_when_there_is_previous_toc_item(
+    ) {
+        //arrange
+        let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
+        let table_of_contents = book.table_of_contents.to_owned();
+        let current_toc_item = TableOfContentsItem {
+            label: "Epilogue".to_string(),
+            path: "OPS/chapter_136.xhtml".to_string(),
+            content: None,
+        };
+        let expected_toc_item = TableOfContentsItem {
+            label: "Chapter 135. The Chase.—Third Day.".to_string(),
+            path: "OPS/chapter_135.xhtml".to_string(),
+            content: None,
+        };
+
+        //act
+        let next_toc_item = table_of_contents
+            .previous_relative(current_toc_item)
+            .unwrap();
+
+        //assert
+        assert_eq!(expected_toc_item, *next_toc_item);
+    }
+
+    #[test]
+    fn get_previous_relative_should_return_none_when_there_is_no_previous_toc_item() {
+        //arrange
+        let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
+        let table_of_contents = book.table_of_contents.to_owned();
+        let current_toc_item = TableOfContentsItem {
+            label: "Moby-Dick".to_string(),
+            path: "OPS/titlepage.xhtml".to_string(),
+            content: None,
+        };
+
+        //act
+        let next_toc_item = table_of_contents.previous_relative(current_toc_item);
+
+        //assert
+        assert!(next_toc_item.is_none());
     }
 }
