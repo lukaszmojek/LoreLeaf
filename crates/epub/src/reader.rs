@@ -8,8 +8,6 @@ pub struct EBookReader {
 #[derive(Clone)]
 struct ReadingSession {
     current: Chapter,
-    next: Option<Chapter>,
-    previous: Option<Chapter>,
 }
 
 impl EBookReader {
@@ -17,11 +15,7 @@ impl EBookReader {
         let first_toc_item = ebook.table_of_contents.items.first().unwrap().clone();
         let chapter = Chapter::from_item(first_toc_item, &mut ebook);
 
-        let session = ReadingSession {
-            current: chapter,
-            next: None,
-            previous: None,
-        };
+        let session = ReadingSession { current: chapter };
 
         Self {
             book: ebook,
@@ -33,12 +27,34 @@ impl EBookReader {
         self.session.current.clone()
     }
 
-    pub fn move_to_next_chapter(&self) {
-        todo!()
+    pub fn move_to_next_chapter(&mut self) {
+        let next_toc_item_to_move_to = self
+            .book
+            .table_of_contents
+            .next_relative(&self.session.current.path);
+
+        if let Some(next_toc_item) = next_toc_item_to_move_to {
+            let current_chapter = Chapter::from_item(next_toc_item.clone(), &mut self.book);
+            let session = ReadingSession {
+                current: current_chapter,
+            };
+            self.session = session;
+        }
     }
 
-    pub fn move_to_previous_chapter(&self) {
-        todo!()
+    pub fn move_to_previous_chapter(&mut self) {
+        let previous_toc_item_to_move_to = self
+            .book
+            .table_of_contents
+            .previous_relative(&self.session.current.path);
+
+        if let Some(previous_toc_item) = previous_toc_item_to_move_to {
+            let current_chapter = Chapter::from_item(previous_toc_item.clone(), &mut self.book);
+            let session = ReadingSession {
+                current: current_chapter,
+            };
+            self.session = session;
+        }
     }
 }
 
@@ -88,8 +104,6 @@ mod reader_tests {
 
         //assert
         assert_eq!(expected_current_chapter, session.current);
-        assert_eq!(None, session.next);
-        assert_eq!(None, session.previous);
     }
 
     #[test]
@@ -104,7 +118,7 @@ mod reader_tests {
 
         let expected_2nd_chapter_5th_in_order = Chapter {
             path: "OPS/chapter_001.xhtml".to_string(),
-            label: "Chapter 1. Loomings".to_string(),
+            label: "Chapter 1. Loomings.".to_string(),
             content: "".to_string(),
         };
 
@@ -120,10 +134,23 @@ mod reader_tests {
             content: "".to_string(),
         };
 
-        let reader = EBookReader::new(book);
+        let expected_5th_chapter_138th_in_order = Chapter {
+            path: "OPS/copyright.xhtml".to_string(),
+            label: "Copyright Page".to_string(),
+            content: "".to_string(),
+        };
+
+        let mut reader = EBookReader::new(book);
 
         //act & assert
         //Comparing initial chapter after reader creation
+        let current_chapter = reader.current_chapter();
+        assert_eq!(current_chapter, expected_1st_chapter_1st_in_order);
+
+        //Trying to move back to previous chapter, should not change the current chapter since reader is on the first one
+        reader.move_to_previous_chapter();
+        reader.move_to_previous_chapter();
+        reader.move_to_previous_chapter();
         let current_chapter = reader.current_chapter();
         assert_eq!(current_chapter, expected_1st_chapter_1st_in_order);
 
@@ -151,6 +178,13 @@ mod reader_tests {
         reader.move_to_next_chapter();
         let current_chapter = reader.current_chapter();
         assert_eq!(current_chapter, expected_4th_chapter_6th_in_order);
+
+        //Moving to last chapter. There are only 138 chapters in the book, so moving 150 times should land on the last one
+        for _ in 0..150 {
+            reader.move_to_next_chapter();
+        }
+        let current_chapter = reader.current_chapter();
+        assert_eq!(current_chapter, expected_5th_chapter_138th_in_order);
     }
 }
 

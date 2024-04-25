@@ -130,16 +130,15 @@ impl TableOfContents {
         self.items.iter().find(|item| item.path == href)
     }
 
-    fn previous_relative(
-        &self,
-        current_toc_item: TableOfContentsItem,
-    ) -> Option<&TableOfContentsItem> {
+    pub fn previous_relative(&self, href: &str) -> Option<&TableOfContentsItem> {
+        let current_toc_item = self.search_for_item(href).unwrap();
+
         if self.items.starts_with(&[current_toc_item.clone()]) {
             return None;
         }
 
         for (index, item) in self.items.iter().enumerate() {
-            if item == &current_toc_item {
+            if item == current_toc_item {
                 return Some(&self.items[index - 1]);
             }
         }
@@ -147,13 +146,15 @@ impl TableOfContents {
         None
     }
 
-    fn next_relative(&self, current_toc_item: TableOfContentsItem) -> Option<&TableOfContentsItem> {
+    pub fn next_relative(&self, href: &str) -> Option<&TableOfContentsItem> {
+        let current_toc_item = self.search_for_item(href).unwrap();
+
         if self.items.ends_with(&[current_toc_item.clone()]) {
             return None;
         }
 
         for (index, item) in self.items.iter().enumerate() {
-            if item == &current_toc_item {
+            if item == current_toc_item {
                 return Some(&self.items[index + 1]);
             }
         }
@@ -262,7 +263,9 @@ mod table_of_contents_tests {
         };
 
         //act
-        let next_toc_item = table_of_contents.next_relative(current_toc_item).unwrap();
+        let next_toc_item = table_of_contents
+            .next_relative(&current_toc_item.path)
+            .unwrap();
 
         //assert
         assert_eq!(expected_toc_item, *next_toc_item);
@@ -280,7 +283,7 @@ mod table_of_contents_tests {
         };
 
         //act
-        let next_toc_item = table_of_contents.next_relative(current_toc_item);
+        let next_toc_item = table_of_contents.next_relative(&current_toc_item.path);
 
         //assert
         assert!(next_toc_item.is_none());
@@ -305,7 +308,7 @@ mod table_of_contents_tests {
 
         //act
         let next_toc_item = table_of_contents
-            .previous_relative(current_toc_item)
+            .previous_relative(&current_toc_item.path)
             .unwrap();
 
         //assert
@@ -324,7 +327,7 @@ mod table_of_contents_tests {
         };
 
         //act
-        let next_toc_item = table_of_contents.previous_relative(current_toc_item);
+        let next_toc_item = table_of_contents.previous_relative(&current_toc_item.path);
 
         //assert
         assert!(next_toc_item.is_none());
