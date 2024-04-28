@@ -1,10 +1,12 @@
 use bevy::prelude::*;
-use common::text::TEXT_COLOR;
+use common::{states::NavigationState, text::TEXT_COLOR};
 
-const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
-const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
-const HOVERED_PRESSED_BUTTON: Color = Color::rgb(0.25, 0.65, 0.25);
-const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
+use crate::home::NavigationButtonAction;
+
+pub const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
+pub const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
+pub const HOVERED_PRESSED_BUTTON: Color = Color::rgb(0.25, 0.65, 0.25);
+pub const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
 
 pub struct ButtonConfiguration {
     pub style: Style,
@@ -46,14 +48,14 @@ impl ButtonConfiguration {
 // TODO: Check previous query
 pub fn button_system(
     mut interaction_query: Query<
-        (&Interaction, &mut BorderColor),
+        (&Interaction, &mut BorderColor, &NavigationButtonAction),
         (Changed<Interaction>, With<Button>),
     >,
 ) {
     // println!("{:?}", interaction_query);
 
-    for (interaction, mut border_color) in &mut interaction_query {
-        println!("{:?}", interaction);
+    for (interaction, mut border_color, action) in &mut interaction_query {
+        println!("{:?}", action);
 
         border_color.0 = match *interaction {
             Interaction::Pressed => PRESSED_BUTTON,

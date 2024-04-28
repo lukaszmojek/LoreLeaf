@@ -1,4 +1,4 @@
-use crate::buttons::{button_system, ButtonConfiguration};
+use crate::buttons::{button_system, ButtonConfiguration, NORMAL_BUTTON, PRESSED_BUTTON};
 
 use crate::state::LoreLeafState;
 use bevy::prelude::*;
@@ -38,8 +38,8 @@ struct OrLoreExplorerScreen;
 #[derive(Component)]
 struct OnNavigation;
 
-#[derive(Component)]
-enum NavigationButtonAction {
+#[derive(Component, Debug)]
+pub enum NavigationButtonAction {
     Home,
     Library,
     Reader,
@@ -168,29 +168,37 @@ fn spawn_button(
 }
 
 fn navigation_action(
-    interaction_query: Query<
-        (&Interaction, &NavigationButtonAction),
+    mut interaction_query: Query<
+        (&Interaction, &mut BorderColor, &NavigationButtonAction),
         (Changed<Interaction>, With<Button>),
     >,
     mut navigation_state: ResMut<NextState<NavigationState>>,
 ) {
-    for (interaction, menu_button_action) in &interaction_query {
-        if *interaction == Interaction::Pressed {
-            match menu_button_action {
-                NavigationButtonAction::Home => {
-                    navigation_state.set(NavigationState::Home);
-                }
-                NavigationButtonAction::Library => {
-                    navigation_state.set(NavigationState::Library);
-                }
-                NavigationButtonAction::Reader => {
-                    navigation_state.set(NavigationState::Reader);
-                }
-                NavigationButtonAction::LoreExplorer => {
-                    navigation_state.set(NavigationState::LoreExplorer);
-                }
-                _ => panic!("Unknown navigation button action!",),
+    for (interaction, mut border_color, menu_button_action) in &mut interaction_query {
+        match *interaction {
+            Interaction::Hovered => {
+                border_color.0 = Color::WHITE;
             }
+            Interaction::Pressed => {
+                border_color.0 = PRESSED_BUTTON;
+
+                match menu_button_action {
+                    NavigationButtonAction::Home => {
+                        navigation_state.set(NavigationState::Home);
+                    }
+                    NavigationButtonAction::Library => {
+                        navigation_state.set(NavigationState::Library);
+                    }
+                    NavigationButtonAction::Reader => {
+                        navigation_state.set(NavigationState::Reader);
+                    }
+                    NavigationButtonAction::LoreExplorer => {
+                        navigation_state.set(NavigationState::LoreExplorer);
+                    }
+                    _ => panic!("Unknown navigation button action!",),
+                }
+            }
+            Interaction::None => border_color.0 = NORMAL_BUTTON,
         }
     }
 }
