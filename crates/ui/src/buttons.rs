@@ -59,7 +59,7 @@ pub fn button_system(
 
         border_color.0 = match *interaction {
             Interaction::Pressed => PRESSED_BUTTON,
-            Interaction::Hovered => HOVERED_PRESSED_BUTTON,
+            Interaction::Hovered => HOVERED_BUTTON,
             // Interaction::Hovered => HOVERED_BUTTON,
             Interaction::None => NORMAL_BUTTON,
         }

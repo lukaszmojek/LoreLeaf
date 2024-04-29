@@ -172,9 +172,17 @@ fn navigation_action(
         (&Interaction, &mut BorderColor, &NavigationButtonAction),
         (Changed<Interaction>, With<Button>),
     >,
-    mut navigation_state: ResMut<NextState<NavigationState>>,
+    current_navigation_state: Res<State<NavigationState>>,
+    mut next_navigation_state: ResMut<NextState<NavigationState>>,
 ) {
     for (interaction, mut border_color, menu_button_action) in &mut interaction_query {
+        let assigned_navigation_stae = match menu_button_action {
+            NavigationButtonAction::Home => NavigationState::Home,
+            NavigationButtonAction::Library => NavigationState::Library,
+            NavigationButtonAction::Reader => NavigationState::Reader,
+            NavigationButtonAction::LoreExplorer => NavigationState::LoreExplorer,
+        };
+
         match *interaction {
             Interaction::Hovered => {
                 border_color.0 = Color::WHITE;
@@ -184,21 +192,25 @@ fn navigation_action(
 
                 match menu_button_action {
                     NavigationButtonAction::Home => {
-                        navigation_state.set(NavigationState::Home);
+                        next_navigation_state.set(NavigationState::Home);
                     }
                     NavigationButtonAction::Library => {
-                        navigation_state.set(NavigationState::Library);
+                        next_navigation_state.set(NavigationState::Library);
                     }
                     NavigationButtonAction::Reader => {
-                        navigation_state.set(NavigationState::Reader);
+                        next_navigation_state.set(NavigationState::Reader);
                     }
                     NavigationButtonAction::LoreExplorer => {
-                        navigation_state.set(NavigationState::LoreExplorer);
+                        next_navigation_state.set(NavigationState::LoreExplorer);
                     }
                     _ => panic!("Unknown navigation button action!",),
                 }
             }
             Interaction::None => border_color.0 = NORMAL_BUTTON,
+        }
+
+        if current_navigation_state.as_ref() == &assigned_navigation_stae {
+            border_color.0 = Color::YELLOW;
         }
     }
 }
