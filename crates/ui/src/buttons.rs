@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use common::{states::NavigationState, text::TEXT_COLOR};
+use common::text::TEXT_COLOR;
 
 use crate::home::NavigationButtonAction;
 
@@ -12,6 +12,30 @@ pub struct ButtonConfiguration {
     pub style: Style,
     pub icon_style: Style,
     pub text_style: TextStyle,
+}
+
+#[derive(Bundle)]
+pub struct NavigationButtonBundle {
+    pub button: ButtonBundle,
+    pub properties: ButtonProperties,
+    pub action: NavigationButtonAction,
+}
+
+#[derive(Component)]
+pub struct ButtonProperties {
+    pub(crate) is_active: bool,
+    pub(crate) is_hovered: bool,
+    pub(crate) is_clicked: bool,
+}
+
+impl Default for ButtonProperties {
+    fn default() -> Self {
+        ButtonProperties {
+            is_active: false,
+            is_hovered: false,
+            is_clicked: false,
+        }
+    }
 }
 
 //TODO: Think how to do that differently
@@ -45,22 +69,17 @@ impl ButtonConfiguration {
 }
 
 // This system handles changing all buttons color based on mouse interaction
-// TODO: Check previous query
-pub fn button_system(
+// Query here is a minimal query that should select all buttons
+pub fn button_interaction_style_system(
     mut interaction_query: Query<
-        (&Interaction, &mut BorderColor, &NavigationButtonAction),
+        (&Interaction, &mut BorderColor),
         (Changed<Interaction>, With<Button>),
     >,
 ) {
-    // println!("{:?}", interaction_query);
-
-    for (interaction, mut border_color, action) in &mut interaction_query {
-        println!("{:?}", action);
-
+    for (interaction, mut border_color) in &mut interaction_query {
         border_color.0 = match *interaction {
             Interaction::Pressed => PRESSED_BUTTON,
-            Interaction::Hovered => HOVERED_BUTTON,
-            // Interaction::Hovered => HOVERED_BUTTON,
+            Interaction::Hovered => HOVERED_PRESSED_BUTTON,
             Interaction::None => NORMAL_BUTTON,
         }
     }

@@ -1,4 +1,7 @@
-use crate::buttons::{button_system, ButtonConfiguration, NORMAL_BUTTON, PRESSED_BUTTON};
+use crate::buttons::{
+    button_interaction_style_system, ButtonConfiguration, ButtonProperties, NavigationButtonBundle,
+    NORMAL_BUTTON, PRESSED_BUTTON,
+};
 
 use crate::state::LoreLeafState;
 use bevy::prelude::*;
@@ -14,7 +17,11 @@ impl Plugin for HomePlugin {
             .add_systems(OnEnter(LoreLeafState::Home), home_navigation_setup)
             .add_systems(
                 Update,
-                (navigation_action, button_system).run_if(in_state(LoreLeafState::Home)),
+                (
+                    navigation_button_interaction_system,
+                    button_interaction_style_system,
+                )
+                    .run_if(in_state(LoreLeafState::Home)),
             )
             .add_systems(OnExit(LoreLeafState::Home), despawn_screen::<OnHomeScreen>) //TODO: List all possible navigation states?
             .add_systems(OnEnter(NavigationState::Home), home_setup)
@@ -44,6 +51,10 @@ pub enum NavigationButtonAction {
     Library,
     Reader,
     LoreExplorer,
+}
+
+pub struct NavigationButtonProperties {
+    pub action: NavigationButtonAction,
 }
 
 #[derive(Resource, Deref, DerefMut)]
@@ -114,20 +125,25 @@ fn home_navigation_setup(mut commands: Commands, asset_server: Res<AssetServer>)
                     ..default()
                 })
                 .with_children(|parent| {
-                    spawn_button(parent, &asset_server, "home", NavigationButtonAction::Home);
-                    spawn_button(
+                    spawn_navigation_button(
+                        parent,
+                        &asset_server,
+                        "home",
+                        NavigationButtonAction::Home,
+                    );
+                    spawn_navigation_button(
                         parent,
                         &asset_server,
                         "library",
                         NavigationButtonAction::Library,
                     );
-                    spawn_button(
+                    spawn_navigation_button(
                         parent,
                         &asset_server,
                         "eyeglasses",
                         NavigationButtonAction::Reader,
                     );
-                    spawn_button(
+                    spawn_navigation_button(
                         parent,
                         &asset_server,
                         "explore", //lore
@@ -142,21 +158,22 @@ fn home_navigation_setup(mut commands: Commands, asset_server: Res<AssetServer>)
     });
 }
 
-fn spawn_button(
+fn spawn_navigation_button(
     parent: &mut ChildBuilder<'_>,
     asset_server: &Res<AssetServer>,
     icon_name: &str,
     button_action: NavigationButtonAction,
 ) {
     parent
-        .spawn((
-            ButtonBundle {
+        .spawn(NavigationButtonBundle {
+            button: ButtonBundle {
                 style: ButtonConfiguration::instance().style.clone(),
                 border_color: BorderColor(Color::BLACK),
                 ..default()
             },
-            button_action,
-        ))
+            properties: default(),
+            action: button_action,
+        })
         .with_children(|parent| {
             let icon: Handle<Image> = asset_server.load(format!("menu/{}.png", icon_name));
             parent.spawn(ImageBundle {
@@ -167,7 +184,7 @@ fn spawn_button(
         });
 }
 
-fn navigation_action(
+fn navigation_button_interaction_system(
     mut interaction_query: Query<
         (&Interaction, &mut BorderColor, &NavigationButtonAction),
         (Changed<Interaction>, With<Button>),
@@ -203,7 +220,6 @@ fn navigation_action(
                     NavigationButtonAction::LoreExplorer => {
                         next_navigation_state.set(NavigationState::LoreExplorer);
                     }
-                    _ => panic!("Unknown navigation button action!",),
                 }
             }
             Interaction::None => border_color.0 = NORMAL_BUTTON,
