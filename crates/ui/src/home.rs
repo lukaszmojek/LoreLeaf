@@ -1,10 +1,10 @@
-use crate::buttons::{
-    button_interaction_style_system, ButtonConfiguration, ButtonProperties, NavigationButtonBundle,
-    NORMAL_BUTTON, PRESSED_BUTTON,
-};
-
 use crate::state::LoreLeafState;
 use bevy::prelude::*;
+use common::buttons::{
+    handle_button_interaction_system, navigation_button_interaction_system,
+    update_button_style_system, ButtonConfiguration, NavigationButtonAction,
+    NavigationButtonBundle, NORMAL_BUTTON, PRESSED_BUTTON,
+};
 use common::screens::MainScreenViewData;
 use common::{states::NavigationState, text::TEXT_COLOR, utilities::despawn_screen};
 use library::plugin::LibraryPlugin;
@@ -18,9 +18,11 @@ impl Plugin for HomePlugin {
             .add_systems(
                 Update,
                 (
+                    handle_button_interaction_system,
                     navigation_button_interaction_system,
-                    button_interaction_style_system,
+                    update_button_style_system,
                 )
+                    .chain()
                     .run_if(in_state(LoreLeafState::Home)),
             )
             .add_systems(OnExit(LoreLeafState::Home), despawn_screen::<OnHomeScreen>) //TODO: List all possible navigation states?
@@ -44,18 +46,6 @@ struct OrLoreExplorerScreen;
 
 #[derive(Component)]
 struct OnNavigation;
-
-#[derive(Component, Debug)]
-pub enum NavigationButtonAction {
-    Home,
-    Library,
-    Reader,
-    LoreExplorer,
-}
-
-pub struct NavigationButtonProperties {
-    pub action: NavigationButtonAction,
-}
 
 #[derive(Resource, Deref, DerefMut)]
 struct HomeTimer(Timer);
@@ -182,51 +172,4 @@ fn spawn_navigation_button(
                 ..default()
             });
         });
-}
-
-fn navigation_button_interaction_system(
-    mut interaction_query: Query<
-        (&Interaction, &mut BorderColor, &NavigationButtonAction),
-        (Changed<Interaction>, With<Button>),
-    >,
-    current_navigation_state: Res<State<NavigationState>>,
-    mut next_navigation_state: ResMut<NextState<NavigationState>>,
-) {
-    for (interaction, mut border_color, menu_button_action) in &mut interaction_query {
-        let assigned_navigation_stae = match menu_button_action {
-            NavigationButtonAction::Home => NavigationState::Home,
-            NavigationButtonAction::Library => NavigationState::Library,
-            NavigationButtonAction::Reader => NavigationState::Reader,
-            NavigationButtonAction::LoreExplorer => NavigationState::LoreExplorer,
-        };
-
-        match *interaction {
-            Interaction::Hovered => {
-                border_color.0 = Color::WHITE;
-            }
-            Interaction::Pressed => {
-                border_color.0 = PRESSED_BUTTON;
-
-                match menu_button_action {
-                    NavigationButtonAction::Home => {
-                        next_navigation_state.set(NavigationState::Home);
-                    }
-                    NavigationButtonAction::Library => {
-                        next_navigation_state.set(NavigationState::Library);
-                    }
-                    NavigationButtonAction::Reader => {
-                        next_navigation_state.set(NavigationState::Reader);
-                    }
-                    NavigationButtonAction::LoreExplorer => {
-                        next_navigation_state.set(NavigationState::LoreExplorer);
-                    }
-                }
-            }
-            Interaction::None => border_color.0 = NORMAL_BUTTON,
-        }
-
-        if current_navigation_state.as_ref() == &assigned_navigation_stae {
-            border_color.0 = Color::YELLOW;
-        }
-    }
 }

@@ -1,10 +1,12 @@
 use bevy::prelude::*;
+use common::buttons::ButtonProperties;
 
 use crate::library::Book;
 
 #[derive(Bundle)]
 pub struct BookTileBundle {
     button: ButtonBundle,
+    button_properties: ButtonProperties,
     book: Book,
 }
 
@@ -47,6 +49,10 @@ impl BookTileBundle {
             ..default()
         };
 
-        Self { button, book }
+        Self {
+            button,
+            book,
+            button_properties: ButtonProperties::default(),
+        }
     }
 }
