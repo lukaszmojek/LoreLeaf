@@ -1,8 +1,9 @@
 use bevy::prelude::*;
+use common::flex_container::{FlexContainer, FlexContainerStyle};
 
 #[derive(Bundle)]
 pub struct ReaderToolbarBundle {
-    pub(crate) container: NodeBundle,
+    pub(crate) container: FlexContainer,
 }
 
 impl ReaderToolbarBundle {
@@ -13,20 +14,14 @@ impl ReaderToolbarBundle {
 
 impl Default for ReaderToolbarBundle {
     fn default() -> Self {
+        let flex_container_style = FlexContainerStyle {
+            background_color: BackgroundColor::from(Color::YELLOW_GREEN),
+            height: Val::Px(75.0),
+            ..default()
+        };
+
         Self {
-            container: NodeBundle {
-                style: Style {
-                    align_items: AlignItems::FlexStart,
-                    align_content: AlignContent::FlexStart,
-                    justify_content: JustifyContent::FlexStart,
-                    flex_wrap: FlexWrap::Wrap,
-                    width: Val::Percent(100.0),
-                    height: Val::Px(100.0),
-                    ..default()
-                },
-                background_color: BackgroundColor::from(Color::YELLOW_GREEN),
-                ..default()
-            },
+            container: FlexContainer::new(Some(flex_container_style)),
         }
     }
 }

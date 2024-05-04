@@ -1,5 +1,10 @@
 use bevy::prelude::*;
-use common::{screens::MainScreenViewData, states::NavigationState, utilities::despawn_screen};
+use common::{
+    flex_container::{FlexContainer, FlexContainerStyle},
+    screens::MainScreenViewData,
+    states::NavigationState,
+    utilities::despawn_screen,
+};
 
 use crate::library::{
     book_interaction_system, compare_books_in_user_library, detect_books_in_library,
@@ -36,21 +41,14 @@ impl Plugin for LibraryPlugin {
 }
 
 fn library_setup(mut commands: Commands, main_screen_view_data: Res<MainScreenViewData>) {
+    let flex_container_style = FlexContainerStyle {
+        margin: UiRect::all(Val::Px(16.0)),
+        ..default()
+    };
+
     let library_screen_entity = commands
         .spawn((
-            NodeBundle {
-                style: Style {
-                    align_items: AlignItems::FlexStart,
-                    align_content: AlignContent::FlexStart,
-                    justify_content: JustifyContent::FlexStart,
-                    flex_wrap: FlexWrap::Wrap,
-                    margin: UiRect::all(Val::Px(16.0)),
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
-                    ..default()
-                },
-                ..default()
-            },
+            FlexContainer::new(Some(flex_container_style)),
             OnLibraryScreen,
         ))
         .id();

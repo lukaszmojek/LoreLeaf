@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use common::{
-    screens::MainScreenViewData, states::NavigationState, text::TEXT_COLOR,
-    utilities::despawn_screen,
+    flex_container::FlexContainer, screens::MainScreenViewData, states::NavigationState,
+    text::TEXT_COLOR, utilities::despawn_screen,
 };
 
 use crate::toolbar::ReaderToolbarBundle;
@@ -25,21 +25,7 @@ impl Plugin for ReaderPlugin {
 
 fn reader_setup(mut commands: Commands, main_screen_view_data: Res<MainScreenViewData>) {
     let reader_screen = commands
-        .spawn((
-            NodeBundle {
-                style: Style {
-                    align_items: AlignItems::FlexStart,
-                    align_content: AlignContent::FlexStart,
-                    justify_content: JustifyContent::FlexStart,
-                    flex_wrap: FlexWrap::Wrap,
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
-                    ..default()
-                },
-                ..default()
-            },
-            OnReaderScreen,
-        ))
+        .spawn((FlexContainer::new(None), OnReaderScreen))
         .with_children(|parent| {
             parent.spawn(ReaderToolbarBundle::new());
 
