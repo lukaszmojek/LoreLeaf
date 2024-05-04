@@ -4,6 +4,8 @@ use common::{
     utilities::despawn_screen,
 };
 
+use crate::toolbar::ReaderToolbarBundle;
+
 #[derive(Component)]
 pub struct OnReaderScreen;
 
@@ -39,19 +41,7 @@ fn reader_setup(mut commands: Commands, main_screen_view_data: Res<MainScreenVie
             OnReaderScreen,
         ))
         .with_children(|parent| {
-            parent.spawn(NodeBundle {
-                style: Style {
-                    align_items: AlignItems::FlexStart,
-                    align_content: AlignContent::FlexStart,
-                    justify_content: JustifyContent::FlexStart,
-                    flex_wrap: FlexWrap::Wrap,
-                    width: Val::Percent(100.0),
-                    height: Val::Px(100.0),
-                    ..default()
-                },
-                background_color: BackgroundColor::from(Color::YELLOW_GREEN),
-                ..default()
-            });
+            parent.spawn(ReaderToolbarBundle::new());
 
             parent.spawn(
                 TextBundle::from_section(
