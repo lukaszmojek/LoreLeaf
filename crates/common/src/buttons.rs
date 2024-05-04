@@ -86,7 +86,6 @@ pub fn handle_button_interaction_system(
     mut interaction_query: Query<(&Interaction, &mut ButtonProperties), With<Button>>,
 ) {
     for (interaction, mut button_properties) in &mut interaction_query {
-        println!("{:?}", interaction);
         match *interaction {
             Interaction::Pressed => {
                 button_properties.is_clicked = true;
@@ -132,7 +131,6 @@ pub fn navigation_button_interaction_system(
     current_navigation_state: Res<State<NavigationState>>,
     mut next_navigation_state: ResMut<NextState<NavigationState>>,
 ) {
-    // println!("Current state: {:?}", current_navigation_state.as_ref());
     for (mut button_properties, navigation_button_action) in &mut interaction_query {
         let assigned_navigation_state = match navigation_button_action {
             NavigationButtonAction::Home => NavigationState::Home,
