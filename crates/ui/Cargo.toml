@@ -8,4 +8,5 @@ edition = "2021"
 [dependencies]
 bevy = "0.13.0"
 library = { path = "../library" }
+reader = { path = "../reader" }
 common = { path = "../common" }

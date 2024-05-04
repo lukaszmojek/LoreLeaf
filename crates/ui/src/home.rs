@@ -8,6 +8,7 @@ use common::buttons::{
 use common::screens::MainScreenViewData;
 use common::{states::NavigationState, text::TEXT_COLOR, utilities::despawn_screen};
 use library::plugin::LibraryPlugin;
+use reader::plugin::ReaderPlugin;
 
 pub struct HomePlugin;
 
@@ -31,7 +32,8 @@ impl Plugin for HomePlugin {
                 OnExit(NavigationState::Home),
                 despawn_screen::<OnHomeScreen>,
             )
-            .add_plugins(LibraryPlugin);
+            .add_plugins(LibraryPlugin)
+            .add_plugins(ReaderPlugin);
     }
 }
 

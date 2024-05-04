@@ -22,6 +22,7 @@ pub struct UserLibrary {
     pub displayed: Vec<Book>,
     pub to_add: Vec<Book>,
     pub to_remove: Vec<Book>,
+    pub selected_for_reading: Option<Book>,
 }
 
 impl UserLibrary {
@@ -31,6 +32,7 @@ impl UserLibrary {
             displayed: vec![],
             to_add: vec![],
             to_remove: vec![],
+            selected_for_reading: None,
         }
     }
 
@@ -53,6 +55,10 @@ impl UserLibrary {
 
     pub fn set_to_remove(&mut self, books: Vec<Book>) {
         self.to_remove = books;
+    }
+
+    pub fn set_selected_for_reading(&mut self, book: Book) {
+        self.selected_for_reading = Some(book);
     }
 }
 
@@ -231,10 +237,12 @@ pub fn refresh_user_library_on_ui(
 
 pub fn book_interaction_system(
     mut interaction_query: Query<(&Interaction, &Book), Changed<Interaction>>,
+    mut user_library: ResMut<UserLibrary>,
 ) {
     for (interaction, book) in &mut interaction_query {
         if let Interaction::Pressed = *interaction {
-            println!("{:?}", book.path)
+            println!("{:?}", &book.path);
+            user_library.set_selected_for_reading(book.to_owned());
         }
     }
 }
@@ -352,5 +360,20 @@ mod check_differences_in_books_on_ui_tests {
 
         assert_eq!(book_difference.to_add.len(), 1);
         assert_eq!(book_difference.to_remove.len(), 1);
+    }
+
+    #[test]
+    fn should_set_selected_for_reading() {
+        let mut user_library = UserLibrary::empty();
+        let book_clicked = Book {
+            name: "Name".to_string(),
+            author: "Author".to_string(),
+            path: "./123".to_string(),
+        };
+
+        user_library.set_selected_for_reading(book_clicked.clone());
+        let selected_book = user_library.selected_for_reading.clone().unwrap();
+
+        assert_eq!(book_clicked, selected_book);
     }
 }

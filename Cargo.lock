@@ -3910,6 +3910,7 @@ dependencies = [
  "bevy",
  "common",
  "library",
+ "reader",
 ]
 
 [[package]]

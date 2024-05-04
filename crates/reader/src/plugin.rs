@@ -1,5 +1,8 @@
 use bevy::prelude::*;
-use common::{screens::MainScreenViewData, states::NavigationState, utilities::despawn_screen};
+use common::{
+    screens::MainScreenViewData, states::NavigationState, text::TEXT_COLOR,
+    utilities::despawn_screen,
+};
 
 #[derive(Component)]
 pub struct OnReaderScreen;
@@ -19,7 +22,7 @@ impl Plugin for ReaderPlugin {
 }
 
 fn reader_setup(mut commands: Commands, main_screen_view_data: Res<MainScreenViewData>) {
-    let library_screen_entity = commands
+    let reader_screen = commands
         .spawn((
             NodeBundle {
                 style: Style {
@@ -27,7 +30,6 @@ fn reader_setup(mut commands: Commands, main_screen_view_data: Res<MainScreenVie
                     align_content: AlignContent::FlexStart,
                     justify_content: JustifyContent::FlexStart,
                     flex_wrap: FlexWrap::Wrap,
-                    margin: UiRect::all(Val::Px(16.0)),
                     width: Val::Percent(100.0),
                     height: Val::Percent(100.0),
                     ..default()
@@ -36,9 +38,39 @@ fn reader_setup(mut commands: Commands, main_screen_view_data: Res<MainScreenVie
             },
             OnReaderScreen,
         ))
+        .with_children(|parent| {
+            parent.spawn(NodeBundle {
+                style: Style {
+                    align_items: AlignItems::FlexStart,
+                    align_content: AlignContent::FlexStart,
+                    justify_content: JustifyContent::FlexStart,
+                    flex_wrap: FlexWrap::Wrap,
+                    width: Val::Percent(100.0),
+                    height: Val::Px(100.0),
+                    ..default()
+                },
+                background_color: BackgroundColor::from(Color::YELLOW_GREEN),
+                ..default()
+            });
+
+            parent.spawn(
+                TextBundle::from_section(
+                    "READER",
+                    TextStyle {
+                        font_size: 80.0,
+                        color: TEXT_COLOR,
+                        ..default()
+                    },
+                )
+                .with_style(Style {
+                    margin: UiRect::all(Val::Px(50.0)),
+                    ..default()
+                }),
+            );
+        })
         .id();
 
     commands
         .entity(main_screen_view_data.container_entity)
-        .push_children(&[library_screen_entity]);
+        .push_children(&[reader_screen]);
 }
