@@ -3270,6 +3270,7 @@ dependencies = [
  "bevy",
  "common",
  "epub",
+ "library",
 ]
 
 [[package]]

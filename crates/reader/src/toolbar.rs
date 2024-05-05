@@ -26,17 +26,9 @@ impl ReaderToolbarBundle {
         let toolbar_commands = parent
             .spawn(ReaderToolbarBundle::new())
             .with_children(|toolbar| {
+                //TODO: Add buttons with actions from epub::EBookReader
                 toolbar.spawn(TextBundle::from_section(
-                    "1",
-                    TextStyle {
-                        font_size: 40.0,
-                        color: TEXT_COLOR,
-                        ..default()
-                    },
-                ));
-
-                toolbar.spawn(TextBundle::from_section(
-                    "2",
+                    "TODO: Fill me with reader actions",
                     TextStyle {
                         font_size: 40.0,
                         color: TEXT_COLOR,

@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use common::states::NavigationState;
 use directories::UserDirs;
 use epub::epub::EBook;
 use std::{
@@ -64,7 +65,7 @@ impl UserLibrary {
 
 #[derive(Debug, Clone, Component)]
 pub struct Book {
-    name: String,
+    pub name: String,
     author: String,
     path: String,
 }
@@ -238,11 +239,13 @@ pub fn refresh_user_library_on_ui(
 pub fn book_interaction_system(
     mut interaction_query: Query<(&Interaction, &Book), Changed<Interaction>>,
     mut user_library: ResMut<UserLibrary>,
+    mut next_navigation: ResMut<NextState<NavigationState>>,
 ) {
     for (interaction, book) in &mut interaction_query {
         if let Interaction::Pressed = *interaction {
             println!("{:?}", &book.path);
-            user_library.set_selected_for_reading(book.to_owned());
+            user_library.set_selected_for_reading(book.clone());
+            next_navigation.set(NavigationState::Reader);
         }
     }
 }

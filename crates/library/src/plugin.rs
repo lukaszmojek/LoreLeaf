@@ -66,5 +66,6 @@ fn library_setup(mut commands: Commands, main_screen_view_data: Res<MainScreenVi
         TimerMode::Repeating,
     )));
 
+    //TODO: Fix that overwriting of existing library
     commands.insert_resource(UserLibrary::empty());
 }

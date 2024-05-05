@@ -3,6 +3,7 @@ use common::{
     flex_container::FlexContainer, screens::MainScreenViewData, states::NavigationState,
     text::TEXT_COLOR, utilities::despawn_screen,
 };
+use library::library::UserLibrary;
 
 use crate::toolbar::ReaderToolbarBundle;
 
@@ -23,15 +24,27 @@ impl Plugin for ReaderPlugin {
     }
 }
 
-fn reader_setup(mut commands: Commands, main_screen_view_data: Res<MainScreenViewData>) {
+fn reader_setup(
+    mut commands: Commands,
+    main_screen_view_data: Res<MainScreenViewData>,
+    user_library: Res<UserLibrary>,
+) {
+    let selected_book = user_library.selected_for_reading.clone();
+
     let reader_screen = commands
         .spawn((FlexContainer::new(None), OnReaderScreen))
         .with_children(|parent| {
             let toolbar_entity = ReaderToolbarBundle::spawn(parent);
 
+            let mut book_title = "Book not found".to_string();
+
+            if let Some(book) = selected_book {
+                book_title = book.name.clone();
+            }
+
             parent.spawn(
                 TextBundle::from_section(
-                    "READER",
+                    book_title,
                     TextStyle {
                         font_size: 80.0,
                         color: TEXT_COLOR,
