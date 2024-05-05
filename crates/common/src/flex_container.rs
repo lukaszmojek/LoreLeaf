@@ -52,7 +52,7 @@ impl Default for FlexContainerStyle {
             width: Val::Percent(100.0),
             height: Val::Percent(100.0),
             margin: UiRect::all(Val::Px(0.0)),
-            background_color: BackgroundColor::from(Color::BLACK),
+            background_color: BackgroundColor::from(Color::rgba_from_array([0.0, 0.0, 0.0, 0.0])), //Transparent background
         }
     }
 }

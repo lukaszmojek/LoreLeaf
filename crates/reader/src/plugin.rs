@@ -27,7 +27,7 @@ fn reader_setup(mut commands: Commands, main_screen_view_data: Res<MainScreenVie
     let reader_screen = commands
         .spawn((FlexContainer::new(None), OnReaderScreen))
         .with_children(|parent| {
-            parent.spawn(ReaderToolbarBundle::new());
+            let toolbar_entity = ReaderToolbarBundle::spawn(parent);
 
             parent.spawn(
                 TextBundle::from_section(

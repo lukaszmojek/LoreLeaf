@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use common::buttons::ButtonProperties;
+use common::buttons::configuration::ButtonProperties;
 
 use crate::library::Book;
 

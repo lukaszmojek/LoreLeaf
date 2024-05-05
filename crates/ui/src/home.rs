@@ -1,10 +1,10 @@
 use crate::state::LoreLeafState;
 use bevy::prelude::*;
-use common::buttons::{
-    handle_button_interaction_system, navigation_button_interaction_system,
-    update_button_style_system, ButtonConfiguration, NavigationButtonAction,
-    NavigationButtonBundle, NORMAL_BUTTON, PRESSED_BUTTON,
+use common::buttons::configuration::ButtonConfiguration;
+use common::buttons::navigation::{
+    navigation_button_interaction_system, NavigationButtonAction, NavigationButtonBundle,
 };
+use common::buttons::systems::{handle_button_interaction_system, update_button_style_system};
 use common::screens::MainScreenViewData;
 use common::{states::NavigationState, text::TEXT_COLOR, utilities::despawn_screen};
 use library::plugin::LibraryPlugin;
