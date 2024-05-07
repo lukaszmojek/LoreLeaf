@@ -29,7 +29,7 @@ fn reader_setup(
     main_screen_view_data: Res<MainScreenViewData>,
     user_library: Res<UserLibrary>,
 ) {
-    let selected_book = user_library.selected_for_reading.clone();
+    let selected_book = user_library.selected_for_reading().clone();
 
     let reader_screen = commands
         .spawn((FlexContainer::new(None), OnReaderScreen))

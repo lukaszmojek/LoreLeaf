@@ -40,7 +40,11 @@ impl Plugin for LibraryPlugin {
     }
 }
 
-fn library_setup(mut commands: Commands, main_screen_view_data: Res<MainScreenViewData>) {
+fn library_setup(
+    mut commands: Commands,
+    main_screen_view_data: Res<MainScreenViewData>,
+    user_library: Option<ResMut<UserLibrary>>,
+) {
     let flex_container_style = FlexContainerStyle {
         margin: UiRect::all(Val::Px(16.0)),
         ..default()
@@ -66,6 +70,9 @@ fn library_setup(mut commands: Commands, main_screen_view_data: Res<MainScreenVi
         TimerMode::Repeating,
     )));
 
-    //TODO: Fix that overwriting of existing library
-    commands.insert_resource(UserLibrary::empty());
+    if let Some(mut library) = user_library {
+        library.clear_displayed();
+    } else {
+        commands.insert_resource(UserLibrary::empty());
+    }
 }

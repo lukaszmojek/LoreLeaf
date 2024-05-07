@@ -19,11 +19,11 @@ pub struct LibraryViewData {
 
 #[derive(Resource, Debug)]
 pub struct UserLibrary {
-    pub detected: Vec<Book>,
-    pub displayed: Vec<Book>,
-    pub to_add: Vec<Book>,
-    pub to_remove: Vec<Book>,
-    pub selected_for_reading: Option<Book>,
+    detected: Vec<Book>,
+    displayed: Vec<Book>,
+    to_add: Vec<Book>,
+    to_remove: Vec<Book>,
+    selected_for_reading: Option<Book>,
 }
 
 impl UserLibrary {
@@ -45,6 +45,10 @@ impl UserLibrary {
         self.displayed = books;
     }
 
+    pub fn clear_displayed(&mut self) {
+        self.displayed.clear();
+    }
+
     pub fn set_to_add(&mut self, books: Vec<Book>) {
         self.to_add = books;
     }
@@ -60,6 +64,10 @@ impl UserLibrary {
 
     pub fn set_selected_for_reading(&mut self, book: Book) {
         self.selected_for_reading = Some(book);
+    }
+
+    pub fn selected_for_reading(&self) -> Option<&Book> {
+        self.selected_for_reading.as_ref()
     }
 }
 
@@ -378,5 +386,28 @@ mod check_differences_in_books_on_ui_tests {
         let selected_book = user_library.selected_for_reading.clone().unwrap();
 
         assert_eq!(book_clicked, selected_book);
+    }
+
+    #[test]
+    fn clear_displayed_should_clear_displayed_collection() {
+        let mut user_library = UserLibrary::empty();
+        let displayed = vec![
+            Book {
+                name: "Name 1".to_string(),
+                author: "Author 1".to_string(),
+                path: "./111".to_string(),
+            },
+            Book {
+                name: "Name 2".to_string(),
+                author: "Author 2".to_string(),
+                path: "./222".to_string(),
+            },
+        ];
+
+        user_library.set_displayed(displayed);
+        assert_eq!(user_library.displayed.len(), 2);
+
+        user_library.clear_displayed();
+        assert_eq!(user_library.displayed.len(), 0);
     }
 }
