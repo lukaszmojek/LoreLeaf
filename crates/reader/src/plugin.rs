@@ -3,6 +3,7 @@ use common::{
     flex_container::FlexContainer, screens::MainScreenViewData, states::NavigationState,
     text::TEXT_COLOR, utilities::despawn_screen,
 };
+use epub::{epub::EBook, reader::EBookReader};
 use library::library::UserLibrary;
 
 use crate::toolbar::ReaderToolbarBundle;
@@ -36,15 +37,32 @@ fn reader_setup(
         .with_children(|parent| {
             let toolbar_entity = ReaderToolbarBundle::spawn(parent);
 
-            let mut book_title = "Book not found".to_string();
+            let mut book_content = "Book not found".to_string();
 
             if let Some(book) = selected_book {
-                book_title = book.name.clone();
+                book_content = book.name.clone();
+
+                println!("Reading book: {:?}", book);
+                let ebook = match EBook::read_epub(book.path.to_string()) {
+                    Ok(ebook) => {
+                        println!("SUCCESS");
+                        println!("{:?}", ebook.table_of_contents);
+                        Some(ebook)
+                    }
+                    Err(e) => {
+                        error!("Error reading ebook: {:?}", e);
+                        None
+                    }
+                };
+
+                let reader = EBookReader::new(ebook.unwrap());
+                let chapter = reader.current_chapter();
+                book_content = chapter.content.clone();
             }
 
             parent.spawn(
                 TextBundle::from_section(
-                    book_title,
+                    book_content,
                     TextStyle {
                         font_size: 80.0,
                         color: TEXT_COLOR,

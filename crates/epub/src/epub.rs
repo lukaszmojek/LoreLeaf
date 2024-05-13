@@ -13,7 +13,9 @@ use crate::{
     manifest::BookManifest,
     metadata::BookMetadata,
     spine::BookSpine,
-    table_of_contents::{TableOfContents, TableOfContentsItem},
+    table_of_contents::{
+        table_of_contents::TableOfContents, table_of_contents_item::TableOfContentsItem,
+    },
 };
 
 pub struct EBook {

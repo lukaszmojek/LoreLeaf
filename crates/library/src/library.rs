@@ -75,7 +75,7 @@ impl UserLibrary {
 pub struct Book {
     pub name: String,
     author: String,
-    path: String,
+    pub path: String,
 }
 
 impl Book {
@@ -114,7 +114,6 @@ pub fn detect_books_in_library(
                 .map(|dir_entry| {
                     //TODO: Fix that strange conversion to String
                     let epub_path = dir_entry.path().to_str().unwrap().to_string();
-
                     EBook::read_epub(epub_path)
                 })
                 .filter_map(|x| x.ok())

@@ -1,4 +1,4 @@
-use crate::{epub::EBook, table_of_contents::TableOfContentsItem};
+use crate::{epub::EBook, table_of_contents::table_of_contents_item::TableOfContentsItem};
 
 pub struct EBookReader {
     book: EBook,

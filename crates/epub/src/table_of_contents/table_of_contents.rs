@@ -5,39 +5,11 @@ use zip::ZipArchive;
 
 use crate::{epub::EBook, manifest::BookManifest};
 
-#[derive(Clone)]
-pub struct TableOfContents {
-    pub items: Vec<TableOfContentsItem>,
-}
+use super::table_of_contents_item::TableOfContentsItem;
 
 #[derive(Debug, Clone)]
-pub struct TableOfContentsItem {
-    pub path: String,
-    pub label: String,
-    pub content: Option<String>,
-}
-
-impl PartialEq for TableOfContentsItem {
-    fn eq(&self, other: &Self) -> bool {
-        self.path == other.path && self.label == other.label
-    }
-}
-
-impl TableOfContentsItem {
-    //TODO: Pass down content dir from EBook
-    pub fn get_href_attribute(e: &quick_xml::events::BytesStart<'_>) -> String {
-        let mut href: String = "".to_string();
-
-        for attribute in e.attributes() {
-            let attr = attribute.unwrap();
-
-            if attr.key == QName(b"href") {
-                href = String::from_utf8(attr.value.to_vec()).unwrap();
-            }
-        }
-
-        "OPS/".to_string() + href.as_str()
-    }
+pub struct TableOfContents {
+    pub items: Vec<TableOfContentsItem>,
 }
 
 impl TableOfContents {
@@ -50,17 +22,83 @@ impl TableOfContents {
         let table_of_contents_from_manifest = manifest.search_for_item("toc").unwrap();
 
         let toc_path = content_dir.join(table_of_contents_from_manifest.href.clone());
+        let toc_href = toc_path.to_str().unwrap();
 
-        let toc_content = EBook::get_archive_file_content(zip, toc_path.to_str().unwrap())
-            .unwrap_or_else(|err| {
-                eprintln!("{:?}", err);
-                "NONE".to_string()
-            });
+        println!("{:?}", toc_path);
+        let is_toc_in_ncx_format = toc_href.contains(".ncx");
 
-        TableOfContents::from_toc_content(toc_content)
+        let toc_content = EBook::get_archive_file_content(zip, toc_href).unwrap_or_else(|err| {
+            eprintln!("{:?}", err);
+            "NONE".to_string()
+        });
+
+        if is_toc_in_ncx_format {
+            return TableOfContents::from_toc_content_for_epub_2(toc_content);
+        }
+
+        TableOfContents::from_toc_content_for_epub_3(toc_content)
     }
 
-    pub fn from_toc_content(toc_content: String) -> TableOfContents {
+    pub fn from_toc_content_for_epub_2(toc_content: String) -> TableOfContents {
+        let mut reader = Reader::from_str(toc_content.borrow());
+        reader.trim_text(true);
+
+        let navigation_selector: &[u8] = b"navMap";
+
+        let mut buf = Vec::new();
+        let mut toc_items: Vec<TableOfContentsItem> = vec![];
+
+        let mut toc_item_href: String = "".to_string();
+        let mut toc_item_label: String = "".to_string();
+        let mut toc_item_reading_started: bool = false;
+        let mut is_inside_toc_nav: bool = false;
+
+        while let Ok(event) = reader.read_event_into(&mut buf) {
+            match event {
+                Event::Start(ref e) | Event::Empty(ref e) => {
+                    if !is_inside_toc_nav {
+                        is_inside_toc_nav = e.name().as_ref() == navigation_selector;
+                    }
+
+                    if let b"content" = e.name().as_ref() {
+                        toc_item_href =
+                            TableOfContentsItem::get_href_attribute_epub2(e.attributes());
+                        toc_item_reading_started = true;
+                    }
+                }
+                Event::Text(e) => {
+                    toc_item_label = e.unescape().unwrap().to_string();
+                }
+                Event::End(e) => {
+                    if !toc_item_reading_started {
+                        continue;
+                    }
+
+                    if !is_inside_toc_nav {
+                        break;
+                    }
+
+                    let toc_item = TableOfContentsItem {
+                        path: toc_item_href,
+                        label: toc_item_label,
+                        content: None,
+                    };
+
+                    toc_items.push(toc_item);
+                    toc_item_href = "".to_string();
+                    toc_item_label = "".to_string();
+                    toc_item_reading_started = false;
+                }
+                Event::Eof => break,
+                _ => {}
+            }
+            buf.clear();
+        }
+
+        TableOfContents { items: toc_items }
+    }
+
+    pub fn from_toc_content_for_epub_3(toc_content: String) -> TableOfContents {
         let mut reader = Reader::from_str(toc_content.borrow());
         reader.trim_text(true);
 
@@ -90,7 +128,8 @@ impl TableOfContents {
                     });
 
                     if let b"a" = e.name().as_ref() {
-                        toc_item_href = TableOfContentsItem::get_href_attribute(e);
+                        toc_item_href =
+                            TableOfContentsItem::get_href_attribute_epub3(e.attributes());
                         toc_item_reading_started = true;
                     }
                 }
@@ -164,14 +203,95 @@ impl TableOfContents {
 }
 
 #[cfg(test)]
-mod table_of_contents_tests {
-    use crate::epub::EBook;
+mod epub2 {
+    use crate::{epub::EBook, table_of_contents::table_of_contents::TableOfContents};
 
-    use super::*;
-    const MOBY_DICK_PATH: &str = "./data/moby-dick.epub";
+    #[test]
+    fn should_parse_nav_point() {
+        const RAW_ITEM: &str = r#"
+          <navMap>
+          <navPoint id="navpoint1" playOrder="1">
+            <navLabel>
+              <text>Spis treści</text>
+            </navLabel>
+            <content src="Text/DRAGONEZA-1.xhtml#toc_marker-1"/>
+          </navPoint>
+        </navMap>
+        "#;
+
+        let table_of_contents = TableOfContents::from_toc_content_for_epub_2(RAW_ITEM.to_string());
+
+        assert_eq!(table_of_contents.items.len(), 1);
+        assert_eq!(table_of_contents.items[0].label, "Spis treści");
+        assert_eq!(
+            table_of_contents.items[0].path,
+            "OEBPS/Text/DRAGONEZA-1.xhtml#toc_marker-1"
+        );
+    }
 
     #[test]
     fn should_contain_properly_read_items_of_the_book() {
+        const DRAGONEZA_PATH: &str = "./data/Dragoneza.epub";
+        let book = EBook::read_epub(DRAGONEZA_PATH.to_string()).unwrap();
+
+        let table_of_contents = book.table_of_contents;
+
+        let toc_length = table_of_contents.items.len();
+
+        assert_eq!(toc_length, 41);
+
+        assert_eq!(
+            table_of_contents.items[0].path,
+            "OEBPS/Text/DRAGONEZA-1.xhtml#toc_marker-1"
+        );
+        assert_eq!(table_of_contents.items[0].label, "Spis treści");
+
+        assert_eq!(
+            table_of_contents.items[toc_length - 2].path,
+            "OEBPS/Text/DRAGONEZA-21.xhtml#toc_marker-40"
+        );
+        assert_eq!(
+            table_of_contents.items[toc_length - 2].label,
+            "Donnerwetter"
+        );
+
+        assert_eq!(
+            table_of_contents.items[toc_length - 1].path,
+            "OEBPS/Text/DRAGONEZA-21.xhtml#toc_marker-41"
+        );
+        assert_eq!(
+            table_of_contents.items[toc_length - 1].label,
+            "Krzysztof Adamski"
+        );
+    }
+}
+
+#[cfg(test)]
+mod epub3 {
+    use crate::{epub::EBook, table_of_contents::table_of_contents::TableOfContents};
+
+    #[test]
+    fn should_parse_nav_point() {
+        const RAW_ITEM: &str = r#"
+        <nav xmlns:epub="http://www.idpf.org/2007/ops" epub:type="toc" id="toc">
+           <ol>
+              <li class="toc-BookTitlePage-rw" id="toc-titlepage">
+                 <a href="titlepage.xhtml">Moby-Dick</a>
+              </li>
+           </ol>
+        </nav>
+        "#;
+
+        let table_of_contents = TableOfContents::from_toc_content_for_epub_3(RAW_ITEM.to_string());
+
+        assert_eq!(table_of_contents.items.len(), 1);
+        assert_eq!(table_of_contents.items[0].label, "Moby-Dick");
+        assert_eq!(table_of_contents.items[0].path, "OPS/titlepage.xhtml");
+    }
+
+    #[test]
+    fn should_contain_properly_read_items_of_the_book() {
+        const MOBY_DICK_PATH: &str = "./data/moby-dick.epub";
         let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
 
         let table_of_contents = book.table_of_contents;
@@ -192,6 +312,14 @@ mod table_of_contents_tests {
             "Chapter 135. The Chase.—Third Day."
         );
     }
+}
+
+#[cfg(test)]
+mod navigation {
+    use crate::epub::EBook;
+
+    use super::*;
+    const MOBY_DICK_PATH: &str = "./data/moby-dick.epub";
 
     #[test]
     fn reader_should_get_the_content_based_on_toc_item() {
