@@ -100,9 +100,11 @@ mod manifest_tests {
 
     use super::*;
 
+    const MOBY_DICK_PATH: &str = "./test_data/epub/moby-dick.epub";
+
     #[test]
     fn search_for_item_should_return_matching_item_when_queried() {
-        let book = EBook::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+        let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
 
         let manifest = book.manifest;
 

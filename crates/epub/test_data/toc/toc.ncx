@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE ncx PUBLIC "-//NISO//DTD ncx 2005-1//EN"
+ "http://www.daisy.org/z3986/2005/ncx-2005-1.dtd"><ncx version="2005-1" xmlns="http://www.daisy.org/z3986/2005/ncx/">
+  <head>
+    <meta content="urn:uuid:a61d0a5c-9764-4c94-8ba2-ed5a77c5f083" name="dtb:uid"/>
+    <meta content="2" name="dtb:depth"/>
+    <meta content="0" name="dtb:totalPageCount"/>
+    <meta content="0" name="dtb:maxPageNumber"/>
+  </head>
+  <docTitle>
+    <text>Dragoneza</text>
+  </docTitle>
+  <docAuthor>
+    <text>Fantazmaty</text>
+  </docAuthor>
+  <navMap>
+    <navPoint id="navpoint1" playOrder="1">
+      <navLabel>
+        <text>Spis treści</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-1.xhtml#toc_marker-1"/>
+    </navPoint>
+    <navPoint id="navpoint2" playOrder="2">
+      <navLabel>
+        <text>Kobieta, która słyszała smoki</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-2.xhtml#toc_marker-2"/>
+    </navPoint>
+    <navPoint id="navpoint3" playOrder="3">
+      <navLabel>
+        <text>Agnieszka Fulińska</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-2.xhtml#toc_marker-3"/>
+    </navPoint>
+    <navPoint id="navpoint4" playOrder="4">
+      <navLabel>
+        <text>Wspiąć się na górę Niitaka</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-3.xhtml#toc_marker-4"/>
+    </navPoint>
+    <navPoint id="navpoint5" playOrder="5">
+      <navLabel>
+        <text>Michał Mądrawski</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-3.xhtml#toc_marker-5"/>
+    </navPoint>
+    <navPoint id="navpoint6" playOrder="6">
+      <navLabel>
+        <text>Miluś</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-4.xhtml#toc_marker-6"/>
+    </navPoint>
+    <navPoint id="navpoint7" playOrder="7">
+      <navLabel>
+        <text>Artur Olchowy</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-4.xhtml#toc_marker-7"/>
+    </navPoint>
+    <navPoint id="navpoint8" playOrder="8">
+      <navLabel>
+        <text>Norddragen</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-5.xhtml#toc_marker-8"/>
+    </navPoint>
+    <navPoint id="navpoint9" playOrder="9">
+      <navLabel>
+        <text>Aleksandra Cebo</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-5.xhtml#toc_marker-9"/>
+    </navPoint>
+    <navPoint id="navpoint10" playOrder="10">
+      <navLabel>
+        <text>Żywożmija</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-6.xhtml#toc_marker-10"/>
+    </navPoint>
+    <navPoint id="navpoint11" playOrder="11">
+      <navLabel>
+        <text>Barbara Mikulska</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-6.xhtml#toc_marker-11"/>
+    </navPoint>
+    <navPoint id="navpoint12" playOrder="12">
+      <navLabel>
+        <text>Katechon</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-7.xhtml#toc_marker-12"/>
+    </navPoint>
+    <navPoint id="navpoint13" playOrder="13">
+      <navLabel>
+        <text>Marcin Tomasiewicz</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-7.xhtml#toc_marker-13"/>
+    </navPoint>
+    <navPoint id="navpoint14" playOrder="14">
+      <navLabel>
+        <text>Siej kwiaty, zbieraj ogień</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-8.xhtml#toc_marker-14"/>
+    </navPoint>
+    <navPoint id="navpoint15" playOrder="15">
+      <navLabel>
+        <text>Krzysztof Matkowski</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-8.xhtml#toc_marker-15"/>
+    </navPoint>
+    <navPoint id="navpoint16" playOrder="16">
+      <navLabel>
+        <text>Zimna Perła</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-9.xhtml#toc_marker-16"/>
+    </navPoint>
+    <navPoint id="navpoint17" playOrder="17">
+      <navLabel>
+        <text>Barbara Januszewska</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-9.xhtml#toc_marker-17"/>
+    </navPoint>
+    <navPoint id="navpoint18" playOrder="18">
+      <navLabel>
+        <text>Na psa urok!</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-10.xhtml#toc_marker-18"/>
+    </navPoint>
+    <navPoint id="navpoint19" playOrder="19">
+      <navLabel>
+        <text>Michał Rybiński</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-10.xhtml#toc_marker-19"/>
+    </navPoint>
+    <navPoint id="navpoint20" playOrder="20">
+      <navLabel>
+        <text>Żmije</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-11.xhtml#toc_marker-20"/>
+    </navPoint>
+    <navPoint id="navpoint21" playOrder="21">
+      <navLabel>
+        <text>Przemysław Morawski</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-11.xhtml#toc_marker-21"/>
+    </navPoint>
+    <navPoint id="navpoint22" playOrder="22">
+      <navLabel>
+        <text>Co dwie głowy, to nie jedna</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-12.xhtml#toc_marker-22"/>
+    </navPoint>
+    <navPoint id="navpoint23" playOrder="23">
+      <navLabel>
+        <text>Krzysztof Rewiuk</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-12.xhtml#toc_marker-23"/>
+    </navPoint>
+    <navPoint id="navpoint24" playOrder="24">
+      <navLabel>
+        <text>Dzieci Posejdona</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-13.xhtml#toc_marker-24"/>
+    </navPoint>
+    <navPoint id="navpoint25" playOrder="25">
+      <navLabel>
+        <text>Magdalena Kucenty</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-13.xhtml#toc_marker-25"/>
+    </navPoint>
+    <navPoint id="navpoint26" playOrder="26">
+      <navLabel>
+        <text>Wycinki z utraconego świata</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-14.xhtml#toc_marker-26"/>
+    </navPoint>
+    <navPoint id="navpoint27" playOrder="27">
+      <navLabel>
+        <text>Maciej Bachorski</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-14.xhtml#toc_marker-27"/>
+    </navPoint>
+    <navPoint id="navpoint28" playOrder="28">
+      <navLabel>
+        <text>Coś do naprawy</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-15.xhtml#toc_marker-28"/>
+    </navPoint>
+    <navPoint id="navpoint29" playOrder="29">
+      <navLabel>
+        <text>Anna Maria Vanitachi</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-15.xhtml#toc_marker-29"/>
+    </navPoint>
+    <navPoint id="navpoint30" playOrder="30">
+      <navLabel>
+        <text>Stary bajarz</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-16.xhtml#toc_marker-30"/>
+    </navPoint>
+    <navPoint id="navpoint31" playOrder="31">
+      <navLabel>
+        <text>Krzysztof Banach</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-16.xhtml#toc_marker-31"/>
+    </navPoint>
+    <navPoint id="navpoint32" playOrder="32">
+      <navLabel>
+        <text>Egzegeza Szalonego Gnostyka</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-17.xhtml#toc_marker-32"/>
+    </navPoint>
+    <navPoint id="navpoint33" playOrder="33">
+      <navLabel>
+        <text>Sylwester Gdela</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-17.xhtml#toc_marker-33"/>
+    </navPoint>
+    <navPoint id="navpoint34" playOrder="34">
+      <navLabel>
+        <text>Jedna jedyna</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-18.xhtml#toc_marker-34"/>
+    </navPoint>
+    <navPoint id="navpoint35" playOrder="35">
+      <navLabel>
+        <text>Aleksandra Buczek-Stachowska</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-18.xhtml#toc_marker-35"/>
+    </navPoint>
+    <navPoint id="navpoint36" playOrder="36">
+      <navLabel>
+        <text>Popiół</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-19.xhtml#toc_marker-36"/>
+    </navPoint>
+    <navPoint id="navpoint37" playOrder="37">
+      <navLabel>
+        <text>Krzysztof Dezyderiusz Sauter</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-19.xhtml#toc_marker-37"/>
+    </navPoint>
+    <navPoint id="navpoint38" playOrder="38">
+      <navLabel>
+        <text>Miniaturka</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-20.xhtml#toc_marker-38"/>
+    </navPoint>
+    <navPoint id="navpoint39" playOrder="39">
+      <navLabel>
+        <text>Magda Brumirska</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-20.xhtml#toc_marker-39"/>
+    </navPoint>
+    <navPoint id="navpoint40" playOrder="40">
+      <navLabel>
+        <text>Donnerwetter</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-21.xhtml#toc_marker-40"/>
+    </navPoint>
+    <navPoint id="navpoint41" playOrder="41">
+      <navLabel>
+        <text>Krzysztof Adamski</text>
+      </navLabel>
+      <content src="Text/DRAGONEZA-21.xhtml#toc_marker-41"/>
+    </navPoint>
+  </navMap>
+</ncx>

@@ -14,7 +14,8 @@ use crate::{
     metadata::BookMetadata,
     spine::BookSpine,
     table_of_contents::{
-        table_of_contents::TableOfContents, table_of_contents_item::TableOfContentsItem,
+        table_of_contents::{self, TableOfContents},
+        table_of_contents_item::TableOfContentsItem,
     },
 };
 
@@ -108,11 +109,15 @@ impl EBook {
 
         let (manifest, spine, metadata) = EBook::create_from_opf(&opf_content);
 
-        let table_of_contents = TableOfContents::create_table_of_contents(
-            zip.borrow_mut(),
-            &manifest,
-            content_dir.borrow(),
-        );
+        let (table_of_contents_href, table_of_contents_content) =
+            TableOfContents::read_table_of_contents_from_manifest(
+                zip.borrow_mut(),
+                &manifest,
+                content_dir.borrow(),
+            );
+
+        let table_of_contents =
+            TableOfContents::from_content(table_of_contents_href, table_of_contents_content);
 
         Ok(Self {
             manifest,
@@ -167,10 +172,11 @@ mod book_tests {
 
     use super::*;
 
-    //TODO: Consider changing that test
+    const MOBY_DICK_PATH: &str = "./test_data/epub/moby-dick.epub";
+
     #[test]
     fn parse_container_should_return_path_to_opf() {
-        let epub_file = File::open("./data/moby-dick.epub").unwrap();
+        let epub_file = File::open(MOBY_DICK_PATH).unwrap();
         let mut archive = ZipArchive::new(epub_file).unwrap();
 
         let opf_path = EBook::parse_container(&mut archive);
@@ -181,14 +187,14 @@ mod book_tests {
 
     #[test]
     fn read_epub_should_detect_content_directory() {
-        let book = EBook::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+        let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
 
         assert_eq!(book._content_dir.to_str().unwrap(), "OPS");
     }
 
     #[test]
     fn parse_opf_should_return_book_with_correct_metadata() {
-        let book = EBook::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+        let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
 
         let book_metadata = book.metadata;
 
@@ -229,7 +235,7 @@ mod book_tests {
             media_type: "application/xhtml+xml".to_string(),
         };
 
-        let book = EBook::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+        let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
 
         let spine = book.spine;
 
@@ -248,7 +254,7 @@ mod book_tests {
 
     #[test]
     fn parse_opf_should_return_book_with_correct_manifest() {
-        let book = EBook::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+        let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
 
         let manifest = book.manifest;
 

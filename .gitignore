@@ -26,3 +26,6 @@ target/
 
 # MacOS specific files
 **/.DS_Store
+
+# Custom excluded directories
+**/_dev_samples

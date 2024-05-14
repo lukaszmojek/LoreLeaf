@@ -88,10 +88,12 @@ impl Chapter {
 mod reader_tests {
     use super::*;
 
+    const MOBY_DICK_PATH: &str = "./test_data/epub/moby-dick.epub";
+
     #[test]
     fn should_create_reader() {
         //arrange
-        let book = EBook::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+        let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
         let reader = EBookReader::new(book);
         let expected_current_chapter = Chapter {
             path: "OPS/titlepage.xhtml".to_string(),
@@ -109,7 +111,7 @@ mod reader_tests {
     #[test]
     fn should_navigate_the_chapters_using_next_and_previous() {
         //arrange
-        let book = EBook::read_epub("./data/moby-dick.epub".to_string()).unwrap();
+        let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
         let expected_1st_chapter_1st_in_order = Chapter {
             path: "OPS/titlepage.xhtml".to_string(),
             label: "Moby-Dick".to_string(),

@@ -13,30 +13,33 @@ pub struct TableOfContents {
 }
 
 impl TableOfContents {
-    pub fn create_table_of_contents(
+    pub fn read_table_of_contents_from_manifest(
         zip: &mut ZipArchive<File>,
         manifest: &BookManifest,
         content_dir: &Path,
-    ) -> Self {
+    ) -> (String, String) {
         // todo!("Href here is not absolute, it is relative to opf file. This needs to be addressed.");
         let table_of_contents_from_manifest = manifest.search_for_item("toc").unwrap();
 
         let toc_path = content_dir.join(table_of_contents_from_manifest.href.clone());
         let toc_href = toc_path.to_str().unwrap();
 
-        println!("{:?}", toc_path);
-        let is_toc_in_ncx_format = toc_href.contains(".ncx");
-
         let toc_content = EBook::get_archive_file_content(zip, toc_href).unwrap_or_else(|err| {
             eprintln!("{:?}", err);
             "NONE".to_string()
         });
 
+        (toc_href.to_string(), toc_content)
+    }
+
+    pub fn from_content(href: String, content: String) -> Self {
+        let is_toc_in_ncx_format = href.contains(".ncx");
+
         if is_toc_in_ncx_format {
-            return TableOfContents::from_toc_content_for_epub_2(toc_content);
+            return TableOfContents::from_toc_content_for_epub_2(content);
         }
 
-        TableOfContents::from_toc_content_for_epub_3(toc_content)
+        TableOfContents::from_toc_content_for_epub_3(content)
     }
 
     pub fn from_toc_content_for_epub_2(toc_content: String) -> TableOfContents {
@@ -204,7 +207,9 @@ impl TableOfContents {
 
 #[cfg(test)]
 mod epub2 {
-    use crate::{epub::EBook, table_of_contents::table_of_contents::TableOfContents};
+    use crate::table_of_contents::table_of_contents::TableOfContents;
+    use std::fs::File;
+    use std::io::prelude::*;
 
     #[test]
     fn should_parse_nav_point() {
@@ -231,10 +236,12 @@ mod epub2 {
 
     #[test]
     fn should_contain_properly_read_items_of_the_book() {
-        const DRAGONEZA_PATH: &str = "./data/Dragoneza.epub";
-        let book = EBook::read_epub(DRAGONEZA_PATH.to_string()).unwrap();
+        const TOC_NCX_SAMPLE_PATH: &str = "./test_data/toc/toc.ncx";
+        let mut toc_file = File::open(TOC_NCX_SAMPLE_PATH).unwrap();
+        let mut toc_content = String::new();
+        toc_file.read_to_string(&mut toc_content).unwrap();
 
-        let table_of_contents = book.table_of_contents;
+        let table_of_contents = TableOfContents::from_content("toc.ncx".to_string(), toc_content);
 
         let toc_length = table_of_contents.items.len();
 
@@ -268,7 +275,9 @@ mod epub2 {
 
 #[cfg(test)]
 mod epub3 {
-    use crate::{epub::EBook, table_of_contents::table_of_contents::TableOfContents};
+    use crate::table_of_contents::table_of_contents::TableOfContents;
+    use std::fs::File;
+    use std::io::prelude::*;
 
     #[test]
     fn should_parse_nav_point() {
@@ -291,10 +300,12 @@ mod epub3 {
 
     #[test]
     fn should_contain_properly_read_items_of_the_book() {
-        const MOBY_DICK_PATH: &str = "./data/moby-dick.epub";
-        let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
+        const TOC_XHTML_SAMPLE_PATH: &str = "./test_data/toc/toc.xhtml";
+        let mut toc_file = File::open(TOC_XHTML_SAMPLE_PATH).unwrap();
+        let mut toc_content = String::new();
+        toc_file.read_to_string(&mut toc_content).unwrap();
 
-        let table_of_contents = book.table_of_contents;
+        let table_of_contents = TableOfContents::from_content("toc.xhtml".to_string(), toc_content);
 
         let toc_length = table_of_contents.items.len();
 
@@ -319,7 +330,7 @@ mod navigation {
     use crate::epub::EBook;
 
     use super::*;
-    const MOBY_DICK_PATH: &str = "./data/moby-dick.epub";
+    const MOBY_DICK_PATH: &str = "./test_data/epub/moby-dick.epub";
 
     #[test]
     fn reader_should_get_the_content_based_on_toc_item() {
