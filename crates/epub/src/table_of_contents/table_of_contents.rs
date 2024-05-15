@@ -81,11 +81,7 @@ impl TableOfContents {
                         break;
                     }
 
-                    let toc_item = TableOfContentsItem {
-                        path: toc_item_href,
-                        label: toc_item_label,
-                        content: None,
-                    };
+                    let toc_item = TableOfContentsItem::new(toc_item_href, toc_item_label, None);
 
                     toc_items.push(toc_item);
                     toc_item_href = "".to_string();
@@ -148,11 +144,7 @@ impl TableOfContents {
                         break;
                     }
 
-                    let toc_item = TableOfContentsItem {
-                        path: toc_item_href,
-                        label: toc_item_label,
-                        content: None,
-                    };
+                    let toc_item = TableOfContentsItem::new(toc_item_href, toc_item_label, None);
 
                     toc_items.push(toc_item);
                     toc_item_href = "".to_string();
@@ -230,8 +222,12 @@ mod epub2 {
         assert_eq!(table_of_contents.items[0].label, "Spis treści");
         assert_eq!(
             table_of_contents.items[0].path,
-            "OEBPS/Text/DRAGONEZA-1.xhtml#toc_marker-1"
+            "OEBPS/Text/DRAGONEZA-1.xhtml"
         );
+        assert_eq!(
+            table_of_contents.items[0].anchor,
+            Some("toc_marker-1".to_string())
+        )
     }
 
     #[test]
@@ -249,13 +245,21 @@ mod epub2 {
 
         assert_eq!(
             table_of_contents.items[0].path,
-            "OEBPS/Text/DRAGONEZA-1.xhtml#toc_marker-1"
+            "OEBPS/Text/DRAGONEZA-1.xhtml"
+        );
+        assert_eq!(
+            table_of_contents.items[0].anchor,
+            Some("toc_marker-1".to_string())
         );
         assert_eq!(table_of_contents.items[0].label, "Spis treści");
 
         assert_eq!(
             table_of_contents.items[toc_length - 2].path,
-            "OEBPS/Text/DRAGONEZA-21.xhtml#toc_marker-40"
+            "OEBPS/Text/DRAGONEZA-21.xhtml"
+        );
+        assert_eq!(
+            table_of_contents.items[toc_length - 2].anchor,
+            Some("toc_marker-40".to_string())
         );
         assert_eq!(
             table_of_contents.items[toc_length - 2].label,
@@ -264,7 +268,11 @@ mod epub2 {
 
         assert_eq!(
             table_of_contents.items[toc_length - 1].path,
-            "OEBPS/Text/DRAGONEZA-21.xhtml#toc_marker-41"
+            "OEBPS/Text/DRAGONEZA-21.xhtml"
+        );
+        assert_eq!(
+            table_of_contents.items[toc_length - 1].anchor,
+            Some("toc_marker-41".to_string())
         );
         assert_eq!(
             table_of_contents.items[toc_length - 1].label,
@@ -357,11 +365,11 @@ mod navigation {
         //arrange
         let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
         let table_of_contents = book.table_of_contents.to_owned();
-        let expected_toc_item = TableOfContentsItem {
-            label: "Chapter 135. The Chase.—Third Day.".to_string(),
-            path: "OPS/chapter_135.xhtml".to_string(),
-            content: None,
-        };
+        let expected_toc_item = TableOfContentsItem::new(
+            "OPS/chapter_135.xhtml".to_string(),
+            "Chapter 135. The Chase.—Third Day.".to_string(),
+            None,
+        );
 
         //act
         let found_toc_item = table_of_contents
@@ -390,16 +398,16 @@ mod navigation {
         //arrange
         let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
         let table_of_contents = book.table_of_contents.to_owned();
-        let current_toc_item = TableOfContentsItem {
-            label: "Chapter 135. The Chase.—Third Day.".to_string(),
-            path: "OPS/chapter_135.xhtml".to_string(),
-            content: None,
-        };
-        let expected_toc_item = TableOfContentsItem {
-            label: "Epilogue".to_string(),
-            path: "OPS/chapter_136.xhtml".to_string(),
-            content: None,
-        };
+        let current_toc_item = TableOfContentsItem::new(
+            "OPS/chapter_135.xhtml".to_string(),
+            "Chapter 135. The Chase.—Third Day.".to_string(),
+            None,
+        );
+        let expected_toc_item = TableOfContentsItem::new(
+            "OPS/chapter_136.xhtml".to_string(),
+            "Epilogue".to_string(),
+            None,
+        );
 
         //act
         let next_toc_item = table_of_contents
@@ -415,11 +423,11 @@ mod navigation {
         //arrange
         let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
         let table_of_contents = book.table_of_contents.to_owned();
-        let current_toc_item = TableOfContentsItem {
-            label: "Copyright Page".to_string(),
-            path: "OPS/copyright.xhtml".to_string(),
-            content: None,
-        };
+        let current_toc_item = TableOfContentsItem::new(
+            "OPS/copyright.xhtml".to_string(),
+            "Copyright Page".to_string(),
+            None,
+        );
 
         //act
         let next_toc_item = table_of_contents.next_relative(&current_toc_item.path);
@@ -434,16 +442,16 @@ mod navigation {
         //arrange
         let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
         let table_of_contents = book.table_of_contents.to_owned();
-        let current_toc_item = TableOfContentsItem {
-            label: "Epilogue".to_string(),
-            path: "OPS/chapter_136.xhtml".to_string(),
-            content: None,
-        };
-        let expected_toc_item = TableOfContentsItem {
-            label: "Chapter 135. The Chase.—Third Day.".to_string(),
-            path: "OPS/chapter_135.xhtml".to_string(),
-            content: None,
-        };
+        let current_toc_item = TableOfContentsItem::new(
+            "OPS/chapter_136.xhtml".to_string(),
+            "Epilogue".to_string(),
+            None,
+        );
+        let expected_toc_item = TableOfContentsItem::new(
+            "OPS/chapter_135.xhtml".to_string(),
+            "Chapter 135. The Chase.—Third Day.".to_string(),
+            None,
+        );
 
         //act
         let next_toc_item = table_of_contents
@@ -459,11 +467,11 @@ mod navigation {
         //arrange
         let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
         let table_of_contents = book.table_of_contents.to_owned();
-        let current_toc_item = TableOfContentsItem {
-            label: "Moby-Dick".to_string(),
-            path: "OPS/titlepage.xhtml".to_string(),
-            content: None,
-        };
+        let current_toc_item = TableOfContentsItem::new(
+            "OPS/titlepage.xhtml".to_string(),
+            "Moby-Dick".to_string(),
+            None,
+        );
 
         //act
         let next_toc_item = table_of_contents.previous_relative(&current_toc_item.path);
