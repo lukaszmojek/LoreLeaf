@@ -42,29 +42,33 @@ impl TableOfContentsItem {
         }
     }
 
-    //TODO: Pass down content dir from EBook
-    pub fn get_href_attribute_epub2(attributes: Attributes, content_dir: &str) -> String {
-        let mut href: String = "".to_string();
-
-        for attribute in attributes {
-            let attr = attribute.unwrap();
-
-            if attr.key.as_ref() == b"src" {
-                href = String::from_utf8(attr.value.to_vec()).unwrap();
-            }
-        }
-
-        format!("{}/{}", content_dir, href).to_string()
+    pub fn get_src_attribute_epub2(attributes: Attributes, content_dir: &str) -> String {
+        TableOfContentsItem::create_path_from_attribute_and_content_dir(
+            attributes,
+            content_dir,
+            "src",
+        )
     }
 
-    //TODO: Pass down content dir from EBook
     pub fn get_href_attribute_epub3(attributes: Attributes, content_dir: &str) -> String {
+        TableOfContentsItem::create_path_from_attribute_and_content_dir(
+            attributes,
+            content_dir,
+            "href",
+        )
+    }
+
+    fn create_path_from_attribute_and_content_dir(
+        attributes: Attributes,
+        content_dir: &str,
+        selector: &str,
+    ) -> String {
         let mut href: String = "".to_string();
 
         for attribute in attributes {
             let attr = attribute.unwrap();
 
-            if attr.key == QName(b"href") {
+            if attr.key == QName(selector.as_bytes()) {
                 href = String::from_utf8(attr.value.to_vec()).unwrap();
             }
         }

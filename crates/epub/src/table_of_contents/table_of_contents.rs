@@ -67,7 +67,7 @@ impl TableOfContents {
                     }
 
                     if let b"content" = e.name().as_ref() {
-                        toc_item_href = TableOfContentsItem::get_href_attribute_epub2(
+                        toc_item_href = TableOfContentsItem::get_src_attribute_epub2(
                             e.attributes(),
                             &content_dir,
                         );
