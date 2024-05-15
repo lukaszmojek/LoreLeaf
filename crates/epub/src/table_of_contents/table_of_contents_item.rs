@@ -43,7 +43,7 @@ impl TableOfContentsItem {
     }
 
     //TODO: Pass down content dir from EBook
-    pub fn get_href_attribute_epub2(attributes: Attributes) -> String {
+    pub fn get_href_attribute_epub2(attributes: Attributes, content_dir: &str) -> String {
         let mut href: String = "".to_string();
 
         for attribute in attributes {
@@ -54,11 +54,11 @@ impl TableOfContentsItem {
             }
         }
 
-        "OEBPS/".to_string() + href.as_str()
+        format!("{}/{}", content_dir, href).to_string()
     }
 
     //TODO: Pass down content dir from EBook
-    pub fn get_href_attribute_epub3(attributes: Attributes) -> String {
+    pub fn get_href_attribute_epub3(attributes: Attributes, content_dir: &str) -> String {
         let mut href: String = "".to_string();
 
         for attribute in attributes {
@@ -69,7 +69,7 @@ impl TableOfContentsItem {
             }
         }
 
-        "OPS/".to_string() + href.as_str()
+        format!("{}/{}", content_dir, href).to_string()
     }
 }
 

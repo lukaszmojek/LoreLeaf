@@ -32,17 +32,20 @@ impl TableOfContents {
         (toc_href.to_string(), toc_content)
     }
 
-    pub fn from_content(href: String, content: String) -> Self {
+    pub fn from_content(href: String, content: String, content_dir: String) -> Self {
         let is_toc_in_ncx_format = href.contains(".ncx");
 
         if is_toc_in_ncx_format {
-            return TableOfContents::from_toc_content_for_epub_2(content);
+            return TableOfContents::from_toc_content_for_epub_2(content, content_dir);
         }
 
-        TableOfContents::from_toc_content_for_epub_3(content)
+        TableOfContents::from_toc_content_for_epub_3(content, content_dir)
     }
 
-    pub fn from_toc_content_for_epub_2(toc_content: String) -> TableOfContents {
+    pub fn from_toc_content_for_epub_2(
+        toc_content: String,
+        content_dir: String,
+    ) -> TableOfContents {
         let mut reader = Reader::from_str(toc_content.borrow());
         reader.trim_text(true);
 
@@ -64,8 +67,10 @@ impl TableOfContents {
                     }
 
                     if let b"content" = e.name().as_ref() {
-                        toc_item_href =
-                            TableOfContentsItem::get_href_attribute_epub2(e.attributes());
+                        toc_item_href = TableOfContentsItem::get_href_attribute_epub2(
+                            e.attributes(),
+                            &content_dir,
+                        );
                         toc_item_reading_started = true;
                     }
                 }
@@ -97,7 +102,10 @@ impl TableOfContents {
         TableOfContents { items: toc_items }
     }
 
-    pub fn from_toc_content_for_epub_3(toc_content: String) -> TableOfContents {
+    pub fn from_toc_content_for_epub_3(
+        toc_content: String,
+        content_dir: String,
+    ) -> TableOfContents {
         let mut reader = Reader::from_str(toc_content.borrow());
         reader.trim_text(true);
 
@@ -127,8 +135,10 @@ impl TableOfContents {
                     });
 
                     if let b"a" = e.name().as_ref() {
-                        toc_item_href =
-                            TableOfContentsItem::get_href_attribute_epub3(e.attributes());
+                        toc_item_href = TableOfContentsItem::get_href_attribute_epub3(
+                            e.attributes(),
+                            &content_dir,
+                        );
                         toc_item_reading_started = true;
                     }
                 }
@@ -215,8 +225,9 @@ mod epub2 {
           </navPoint>
         </navMap>
         "#;
-
-        let table_of_contents = TableOfContents::from_toc_content_for_epub_2(RAW_ITEM.to_string());
+        let content_dir = "OEBPS".to_string();
+        let table_of_contents =
+            TableOfContents::from_toc_content_for_epub_2(RAW_ITEM.to_string(), content_dir);
 
         assert_eq!(table_of_contents.items.len(), 1);
         assert_eq!(table_of_contents.items[0].label, "Spis treści");
@@ -233,11 +244,13 @@ mod epub2 {
     #[test]
     fn should_contain_properly_read_items_of_the_book() {
         const TOC_NCX_SAMPLE_PATH: &str = "./test_data/toc/toc.ncx";
+        let content_dir = "OEBPS".to_string();
         let mut toc_file = File::open(TOC_NCX_SAMPLE_PATH).unwrap();
         let mut toc_content = String::new();
         toc_file.read_to_string(&mut toc_content).unwrap();
 
-        let table_of_contents = TableOfContents::from_content("toc.ncx".to_string(), toc_content);
+        let table_of_contents =
+            TableOfContents::from_content("toc.ncx".to_string(), toc_content, content_dir);
 
         let toc_length = table_of_contents.items.len();
 
@@ -299,7 +312,9 @@ mod epub3 {
         </nav>
         "#;
 
-        let table_of_contents = TableOfContents::from_toc_content_for_epub_3(RAW_ITEM.to_string());
+        let content_dir = "OPS".to_string();
+        let table_of_contents =
+            TableOfContents::from_toc_content_for_epub_3(RAW_ITEM.to_string(), content_dir);
 
         assert_eq!(table_of_contents.items.len(), 1);
         assert_eq!(table_of_contents.items[0].label, "Moby-Dick");
@@ -313,7 +328,9 @@ mod epub3 {
         let mut toc_content = String::new();
         toc_file.read_to_string(&mut toc_content).unwrap();
 
-        let table_of_contents = TableOfContents::from_content("toc.xhtml".to_string(), toc_content);
+        let content_dir = "OPS".to_string();
+        let table_of_contents =
+            TableOfContents::from_content("toc.xhtml".to_string(), toc_content, content_dir);
 
         let toc_length = table_of_contents.items.len();
 

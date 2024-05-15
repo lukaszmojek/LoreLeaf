@@ -116,8 +116,11 @@ impl EBook {
                 content_dir.borrow(),
             );
 
-        let table_of_contents =
-            TableOfContents::from_content(table_of_contents_href, table_of_contents_content);
+        let table_of_contents = TableOfContents::from_content(
+            table_of_contents_href,
+            table_of_contents_content,
+            content_dir.to_str().unwrap().to_owned(),
+        );
 
         Ok(Self {
             manifest,
