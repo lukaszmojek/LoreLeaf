@@ -15,6 +15,9 @@ impl PartialEq for TableOfContentsItem {
 }
 
 impl TableOfContentsItem {
+    const EPUB2_SRC_ATTRIBUTE: &'static str = "src";
+    const EPUB3_HREF_ATTRIBUTE: &'static str = "href";
+
     pub fn new(path: String, label: String, content: Option<String>) -> Self {
         let split_path = path.split_once("#");
 
@@ -43,18 +46,18 @@ impl TableOfContentsItem {
     }
 
     pub fn get_src_attribute_epub2(attributes: Attributes, content_dir: &str) -> String {
-        TableOfContentsItem::create_path_from_attribute_and_content_dir(
+        Self::create_path_from_attribute_and_content_dir(
             attributes,
             content_dir,
-            "src",
+            Self::EPUB2_SRC_ATTRIBUTE,
         )
     }
 
     pub fn get_href_attribute_epub3(attributes: Attributes, content_dir: &str) -> String {
-        TableOfContentsItem::create_path_from_attribute_and_content_dir(
+        Self::create_path_from_attribute_and_content_dir(
             attributes,
             content_dir,
-            "href",
+            Self::EPUB3_HREF_ATTRIBUTE,
         )
     }
 
