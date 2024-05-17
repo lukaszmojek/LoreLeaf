@@ -25,7 +25,7 @@ Other problem that I couldn't see being addressed properly are:
 
 - [ ] Opening books in different formats
   - [ ] EPUB
-    - [ ] EPUB 2
+    - [x] EPUB 2
     - [x] EPUB 3
   - [ ] PDF
 - [ ] Reading books
