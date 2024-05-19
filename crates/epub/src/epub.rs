@@ -14,7 +14,7 @@ use crate::{
     metadata::BookMetadata,
     spine::BookSpine,
     table_of_contents::{
-        table_of_contents::{self, TableOfContents},
+        table_of_contents::TableOfContents,
         table_of_contents_item::TableOfContentsItem,
     },
 };

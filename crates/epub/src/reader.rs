@@ -98,7 +98,7 @@ mod reader_tests {
         let expected_current_chapter = Chapter {
             path: "OPS/titlepage.xhtml".to_string(),
             label: "Moby-Dick".to_string(),
-            content: "".to_string(),
+            content: String::new(),
         };
 
         //act
@@ -115,31 +115,31 @@ mod reader_tests {
         let expected_1st_chapter_1st_in_order = Chapter {
             path: "OPS/titlepage.xhtml".to_string(),
             label: "Moby-Dick".to_string(),
-            content: "".to_string(),
+            content: String::new(),
         };
 
         let expected_2nd_chapter_5th_in_order = Chapter {
             path: "OPS/chapter_001.xhtml".to_string(),
             label: "Chapter 1. Loomings.".to_string(),
-            content: "".to_string(),
+            content: String::new(),
         };
 
         let expected_3rd_chapter_7th_in_order = Chapter {
             path: "OPS/chapter_003.xhtml".to_string(),
             label: "Chapter 3. The Spouter-Inn.".to_string(),
-            content: "".to_string(),
+            content: String::new(),
         };
 
         let expected_4th_chapter_6th_in_order = Chapter {
             path: "OPS/chapter_002.xhtml".to_string(),
             label: "Chapter 2. The Carpet-Bag.".to_string(),
-            content: "".to_string(),
+            content: String::new(),
         };
 
         let expected_5th_chapter_138th_in_order = Chapter {
             path: "OPS/copyright.xhtml".to_string(),
             label: "Copyright Page".to_string(),
-            content: "".to_string(),
+            content: String::new(),
         };
 
         let mut reader = EBookReader::new(book);

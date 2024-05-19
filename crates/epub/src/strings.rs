@@ -1,0 +1,1 @@
+pub const EMTPY_STRING_SLICE: &'static str = "";

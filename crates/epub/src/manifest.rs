@@ -40,9 +40,9 @@ impl BookManifest {
         e: &quick_xml::events::BytesStart<'_>,
         manifest_items: &mut Vec<Rc<ManifestItem>>,
     ) {
-        let mut id = "".to_string();
-        let mut href = "".to_string();
-        let mut media_type = "".to_string();
+        let mut id = String::new();
+        let mut href = String::new();
+        let mut media_type = String::new();
 
         for attribute_result in e.attributes() {
             let attribute = attribute_result.unwrap();

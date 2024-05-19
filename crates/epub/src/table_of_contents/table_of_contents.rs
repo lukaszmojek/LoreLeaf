@@ -13,6 +13,8 @@ pub struct TableOfContents {
 }
 
 impl TableOfContents {
+    const NCX_EXTENSION: &'static str = ".ncx";
+
     pub fn read_table_of_contents_from_manifest(
         zip: &mut ZipArchive<File>,
         manifest: &BookManifest,
@@ -33,7 +35,7 @@ impl TableOfContents {
     }
 
     pub fn from_content(href: String, content: String, content_dir: String) -> Self {
-        let is_toc_in_ncx_format = href.contains(".ncx");
+        let is_toc_in_ncx_format = href.contains(Self::NCX_EXTENSION);
 
         if is_toc_in_ncx_format {
             return TableOfContents::from_toc_content_for_epub_2(content, content_dir);
@@ -54,8 +56,8 @@ impl TableOfContents {
         let mut buf = Vec::new();
         let mut toc_items: Vec<TableOfContentsItem> = vec![];
 
-        let mut toc_item_href: String = "".to_string();
-        let mut toc_item_label: String = "".to_string();
+        let mut toc_item_href: String = String::new();
+        let mut toc_item_label: String = String::new();
         let mut toc_item_reading_started: bool = false;
         let mut is_inside_toc_nav: bool = false;
 
@@ -89,8 +91,8 @@ impl TableOfContents {
                     let toc_item = TableOfContentsItem::new(toc_item_href, toc_item_label, None);
 
                     toc_items.push(toc_item);
-                    toc_item_href = "".to_string();
-                    toc_item_label = "".to_string();
+                    toc_item_href = String::new();
+                    toc_item_label = String::new();
                     toc_item_reading_started = false;
                 }
                 Event::Eof => break,
@@ -114,8 +116,8 @@ impl TableOfContents {
         let mut buf = Vec::new();
         let mut toc_items: Vec<TableOfContentsItem> = vec![];
 
-        let mut toc_item_href: String = "".to_string();
-        let mut toc_item_label: String = "".to_string();
+        let mut toc_item_href: String = String::new();
+        let mut toc_item_label: String = String::new();
         let mut toc_item_reading_started: bool = false;
         let mut is_inside_toc_nav: bool = false;
 
@@ -157,8 +159,8 @@ impl TableOfContents {
                     let toc_item = TableOfContentsItem::new(toc_item_href, toc_item_label, None);
 
                     toc_items.push(toc_item);
-                    toc_item_href = "".to_string();
-                    toc_item_label = "".to_string();
+                    toc_item_href = String::new();
+                    toc_item_label = String::new();
                     toc_item_reading_started = false;
                 }
                 Event::Eof => break,

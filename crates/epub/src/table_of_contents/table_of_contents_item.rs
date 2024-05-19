@@ -1,5 +1,7 @@
 use quick_xml::{events::attributes::Attributes, name::QName};
 
+use crate::strings::EMTPY_STRING_SLICE;
+
 #[derive(Debug, Clone)]
 pub struct TableOfContentsItem {
     pub path: String,
@@ -16,10 +18,11 @@ impl PartialEq for TableOfContentsItem {
 
 impl TableOfContentsItem {
     const EPUB2_SRC_ATTRIBUTE: &'static str = "src";
+    const EPUB2_SRC_ELEMENT_SPLITTER: &'static str = "#";
     const EPUB3_HREF_ATTRIBUTE: &'static str = "href";
 
     pub fn new(path: String, label: String, content: Option<String>) -> Self {
-        let split_path = path.split_once("#");
+        let split_path = path.split_once(Self::EPUB2_SRC_ELEMENT_SPLITTER);
 
         let cleaned_path = match split_path {
             Some((path_chunk, _)) => path_chunk.to_string(),
@@ -66,7 +69,7 @@ impl TableOfContentsItem {
         content_dir: &str,
         selector: &str,
     ) -> String {
-        let mut href: String = "".to_string();
+        let mut href: String = EMTPY_STRING_SLICE.to_string();
 
         for attribute in attributes {
             let attr = attribute.unwrap();
