@@ -20,7 +20,7 @@ impl TableOfContents {
         manifest: &BookManifest,
         content_dir: &Path,
     ) -> (String, String) {
-        // todo!("Href here is not absolute, it is relative to opf file. This needs to be addressed.");
+        //TODO: Href here is not absolute, it is relative to opf file. This needs to be addressed.
         let table_of_contents_from_manifest = manifest.search_for_item("toc").unwrap();
 
         let toc_path = content_dir.join(table_of_contents_from_manifest.href.clone());
