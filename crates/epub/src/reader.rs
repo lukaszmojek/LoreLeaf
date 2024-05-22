@@ -1,4 +1,7 @@
-use crate::{epub::EBook, table_of_contents::table_of_contents_item::TableOfContentsItem};
+use crate::{
+    chapters::structure::Chapter, epub::EBook,
+    table_of_contents::table_of_contents_item::TableOfContentsItem,
+};
 
 pub struct EBookReader {
     book: EBook,
@@ -58,48 +61,41 @@ impl EBookReader {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct Chapter {
-    pub path: String,
-    pub label: String,
-    pub content: String,
-}
-
-impl PartialEq for Chapter {
-    fn eq(&self, other: &Self) -> bool {
-        self.path == other.path && self.label == other.label
-    }
-}
-
-impl Chapter {
-    fn from_item(item: TableOfContentsItem, ebook: &mut EBook) -> Chapter {
-        //TODO: Consider moving chapter creation to this method invocation, since from this point on TocItem is not itself anymore
-        let content = ebook.get_content_by_toc_item(&item).unwrap();
-
-        Chapter {
-            path: item.path.clone(),
-            label: item.label.clone(),
-            content,
-        }
-    }
-}
-
 #[cfg(test)]
 mod reader_tests {
-    use super::*;
+    use std::rc::Rc;
+
+    use crate::{
+        chapters::structure::{Chapter, ChapterNode},
+        epub::EBook,
+        reader::EBookReader,
+    };
 
     const MOBY_DICK_PATH: &str = "./test_data/epub/moby-dick.epub";
+
+    impl Chapter {
+        fn with_path_and_label(path: String, label: String) -> Self {
+            Chapter {
+                path: path,
+                label: label,
+                recreated_structure: Rc::new(ChapterNode::new(
+                    "tag".to_string(),
+                    "content".to_string(),
+                )),
+                raw_content: "raw".to_string(),
+            }
+        }
+    }
 
     #[test]
     fn should_create_reader() {
         //arrange
         let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
         let reader = EBookReader::new(book);
-        let expected_current_chapter = Chapter {
-            path: "OPS/titlepage.xhtml".to_string(),
-            label: "Moby-Dick".to_string(),
-            content: String::new(),
-        };
+        let expected_current_chapter = Chapter::with_path_and_label(
+            "OPS/titlepage.xhtml".to_string(),
+            "Moby-Dick".to_string(),
+        );
 
         //act
         let session = reader.session;
@@ -112,35 +108,30 @@ mod reader_tests {
     fn should_navigate_the_chapters_using_next_and_previous() {
         //arrange
         let book = EBook::read_epub(MOBY_DICK_PATH.to_string()).unwrap();
-        let expected_1st_chapter_1st_in_order = Chapter {
-            path: "OPS/titlepage.xhtml".to_string(),
-            label: "Moby-Dick".to_string(),
-            content: String::new(),
-        };
+        let expected_1st_chapter_1st_in_order = Chapter::with_path_and_label(
+            "OPS/titlepage.xhtml".to_string(),
+            "Moby-Dick".to_string(),
+        );
 
-        let expected_2nd_chapter_5th_in_order = Chapter {
-            path: "OPS/chapter_001.xhtml".to_string(),
-            label: "Chapter 1. Loomings.".to_string(),
-            content: String::new(),
-        };
+        let expected_2nd_chapter_5th_in_order = Chapter::with_path_and_label(
+            "OPS/chapter_001.xhtml".to_string(),
+            "Chapter 1. Loomings.".to_string(),
+        );
 
-        let expected_3rd_chapter_7th_in_order = Chapter {
-            path: "OPS/chapter_003.xhtml".to_string(),
-            label: "Chapter 3. The Spouter-Inn.".to_string(),
-            content: String::new(),
-        };
+        let expected_3rd_chapter_7th_in_order = Chapter::with_path_and_label(
+            "OPS/chapter_003.xhtml".to_string(),
+            "Chapter 3. The Spouter-Inn.".to_string(),
+        );
 
-        let expected_4th_chapter_6th_in_order = Chapter {
-            path: "OPS/chapter_002.xhtml".to_string(),
-            label: "Chapter 2. The Carpet-Bag.".to_string(),
-            content: String::new(),
-        };
+        let expected_4th_chapter_6th_in_order = Chapter::with_path_and_label(
+            "OPS/chapter_002.xhtml".to_string(),
+            "Chapter 2. The Carpet-Bag.".to_string(),
+        );
 
-        let expected_5th_chapter_138th_in_order = Chapter {
-            path: "OPS/copyright.xhtml".to_string(),
-            label: "Copyright Page".to_string(),
-            content: String::new(),
-        };
+        let expected_5th_chapter_138th_in_order = Chapter::with_path_and_label(
+            "OPS/copyright.xhtml".to_string(),
+            "Copyright Page".to_string(),
+        );
 
         let mut reader = EBookReader::new(book);
 
@@ -195,6 +186,10 @@ mod chapter_tests {
     use super::*;
 
     mod partial_eq {
+        use std::rc::Rc;
+
+        use crate::chapters::structure::ChapterNode;
+
         use super::*;
 
         #[test]
@@ -231,7 +226,11 @@ mod chapter_tests {
             Chapter {
                 path: path.to_string(),
                 label: label.to_string(),
-                content: content.to_string(),
+                raw_content: content.to_string(),
+                recreated_structure: Rc::new(ChapterNode::new(
+                    "tag".to_string(),
+                    "content".to_string(),
+                )),
             }
         }
     }

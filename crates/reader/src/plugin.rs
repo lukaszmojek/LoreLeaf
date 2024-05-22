@@ -57,9 +57,9 @@ fn reader_setup(
 
                 let reader = EBookReader::new(ebook.unwrap());
                 let chapter = reader.current_chapter();
-                book_content = chapter.content.clone();
             }
 
+            //TODO: Spawn items for all nodes in chapter.recreated_structure
             parent.spawn(
                 TextBundle::from_section(
                     book_content,

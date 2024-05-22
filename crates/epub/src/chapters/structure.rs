@@ -4,8 +4,11 @@ use std::rc::{Rc, Weak};
 use quick_xml::events::Event;
 use quick_xml::Reader;
 
-#[derive(Debug)]
-struct ChapterNode {
+use crate::epub::EBook;
+use crate::table_of_contents::table_of_contents_item::TableOfContentsItem;
+
+#[derive(Debug, Clone)]
+pub struct ChapterNode {
     tag: String,
     content: RefCell<String>,
     parent: RefCell<Weak<ChapterNode>>,
@@ -13,7 +16,7 @@ struct ChapterNode {
 }
 
 impl ChapterNode {
-    fn new(tag: String, content: String) -> ChapterNode {
+    pub(crate) fn new(tag: String, content: String) -> ChapterNode {
         ChapterNode {
             tag: tag,
             content: RefCell::new(content),
@@ -32,9 +35,33 @@ impl ChapterNode {
     }
 }
 
-struct Chapter {}
+#[derive(Debug, Clone)]
+pub struct Chapter {
+    pub path: String,
+    pub label: String,
+    pub recreated_structure: Rc<ChapterNode>,
+    pub(crate) raw_content: String,
+}
+
+impl PartialEq for Chapter {
+    fn eq(&self, other: &Self) -> bool {
+        self.path == other.path && self.label == other.label
+    }
+}
 
 impl Chapter {
+    pub fn from_item(item: TableOfContentsItem, ebook: &mut EBook) -> Chapter {
+        //TODO: Consider moving chapter creation to this method invocation, since from this point on TocItem is not itself anymore
+        let content = ebook.get_content_by_toc_item(&item).unwrap();
+
+        Chapter {
+            path: item.path.clone(),
+            label: item.label.clone(),
+            recreated_structure: Chapter::recreate_structure(&content),
+            raw_content: content,
+        }
+    }
+
     //TODO: Introduce placeholders for the children inside parents
     fn recreate_structure(chapter_content: &str) -> Rc<ChapterNode> {
         let mut root = Rc::new(ChapterNode::new("root".to_string(), String::new()));
