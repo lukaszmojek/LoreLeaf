@@ -7,40 +7,14 @@ use quick_xml::Reader;
 use crate::epub::EBook;
 use crate::table_of_contents::table_of_contents_item::TableOfContentsItem;
 
-#[derive(Debug, Clone)]
-pub struct ChapterNode {
-    tag: String,
-    content: RefCell<String>,
-    parent: RefCell<Weak<ChapterNode>>,
-    children: RefCell<Vec<Rc<ChapterNode>>>,
-}
-
-impl ChapterNode {
-    pub(crate) fn new(tag: String, content: String) -> ChapterNode {
-        ChapterNode {
-            tag: tag,
-            content: RefCell::new(content),
-            parent: RefCell::new(Weak::new()),
-            children: RefCell::new(vec![]),
-        }
-    }
-
-    fn add_child(parent: &Rc<ChapterNode>, child: &Rc<ChapterNode>) {
-        *child.parent.borrow_mut() = Rc::downgrade(parent);
-        parent.children.borrow_mut().push(Rc::clone(child));
-    }
-
-    fn append_to_content(node: &Rc<ChapterNode>, content: &str) {
-        node.content.borrow_mut().push_str(content);
-    }
-}
+use super::chapter_node::ChapterNode;
 
 #[derive(Debug, Clone)]
 pub struct Chapter {
     pub path: String,
     pub label: String,
     pub recreated_structure: Rc<ChapterNode>,
-    pub(crate) raw_content: String,
+    pub(crate) _raw_content: String,
 }
 
 impl PartialEq for Chapter {
@@ -58,7 +32,7 @@ impl Chapter {
             path: item.path.clone(),
             label: item.label.clone(),
             recreated_structure: Chapter::recreate_structure(&content),
-            raw_content: content,
+            _raw_content: content,
         }
     }
 
@@ -73,8 +47,6 @@ impl Chapter {
         let mut buf = Vec::new();
         let mut tag: String = String::new();
         let mut content: String = String::new();
-        let mut nesting_level: u8 = 0;
-        let mut currently_reading_other_item: bool = false;
 
         while let Ok(event) = reader.read_event_into(&mut buf) {
             match event {
@@ -82,9 +54,6 @@ impl Chapter {
                     // if currently_reading_other_item {
                     //     continue;
                     // }
-                    currently_reading_other_item = true;
-                    nesting_level += 1;
-
                     tag = String::from_utf8(e.name().0.to_vec()).unwrap();
 
                     let new_node = Rc::new(ChapterNode::new(tag, String::new()));
@@ -92,20 +61,12 @@ impl Chapter {
                     ChapterNode::add_child(&current_node, &new_node);
 
                     current_node = new_node;
-                    println!("Start curent: {:?}", current_node);
                 }
                 Event::Text(e) => {
                     content = e.unescape().unwrap().to_string();
                     ChapterNode::append_to_content(&current_node, &content);
-
-                    println!("Text curent: {:?}", current_node);
                 }
                 Event::End(ref e) => {
-                    println!("End curent: {:?}", current_node);
-
-                    currently_reading_other_item = false;
-                    nesting_level -= 1;
-
                     let parent = current_node.parent.borrow().upgrade().unwrap();
                     current_node = parent;
                 }
@@ -117,47 +78,31 @@ impl Chapter {
 
         current_node
     }
+
+    pub(crate) fn get_body(&self) -> Option<Rc<ChapterNode>> {
+        const BODY_TAG: &str = "body";
+
+        for child_element in self.recreated_structure.children.borrow().iter() {
+            if child_element.tag == BODY_TAG {
+                let body = Rc::clone(child_element);
+                return Some(body);
+            }
+
+            for grandchild_element in child_element.children.borrow().iter() {
+                if grandchild_element.tag == BODY_TAG {
+                    let body = Rc::clone(grandchild_element);
+                    return Some(body);
+                }
+            }
+        }
+
+        None
+    }
 }
 
 #[cfg(test)]
-mod structure {
-    use std::rc::Rc;
-
-    use crate::chapters::structure::Chapter;
-
-    use super::ChapterNode;
-
-    #[test]
-    fn should_create_chapter_node() {
-        let sut = ChapterNode::new("h1".to_string(), "Chapter 1".to_string());
-
-        assert_eq!(sut.tag, "h1".to_string());
-        assert_eq!(sut.content, "Chapter 1".to_string().into());
-        assert_eq!(sut.children.borrow().len(), 0);
-        assert!(sut.parent.borrow().upgrade().is_none());
-    }
-
-    #[test]
-    fn should_add_child_to_chapter_node() {
-        let sut = Rc::new(ChapterNode::new("h1".to_string(), "Chapter 1".to_string()));
-        let child = Rc::new(ChapterNode::new(
-            "div".to_string(),
-            "Some line of text".to_string(),
-        ));
-
-        ChapterNode::add_child(&sut, &child);
-
-        assert_eq!(sut.children.borrow().len(), 1);
-        assert_eq!(sut.children.borrow()[0].tag, "div".to_string());
-        assert_eq!(
-            sut.children.borrow()[0].content,
-            "Some line of text".to_string().into()
-        );
-        assert_eq!(
-            child.parent.borrow().upgrade().unwrap().tag,
-            "h1".to_string()
-        );
-    }
+mod chaptger_node_tests {
+    use crate::chapters::chapter::Chapter;
 
     #[test]
     fn should_recreate_chapter_structure() {
@@ -322,5 +267,132 @@ mod structure {
                 .len(),
             0
         );
+    }
+}
+
+#[cfg(test)]
+mod chapter_tests {
+    use super::*;
+
+    mod partial_eq {
+        use std::rc::Rc;
+
+        use super::*;
+
+        #[test]
+        fn partial_eq_should_check_path() {
+            //arrange
+            let chapter1 = create_chapter("1", "1", "111");
+            let chapter2 = create_chapter("2", "1", "111");
+
+            //assert
+            assert_ne!(chapter1, chapter2);
+        }
+
+        #[test]
+        fn partial_eq_should_check_label() {
+            //arrange
+            let chapter1 = create_chapter("1", "1", "111");
+            let chapter2 = create_chapter("1", "2", "111");
+
+            //assert
+            assert_ne!(chapter1, chapter2);
+        }
+
+        #[test]
+        fn partial_eq_should_not_check_content() {
+            //arrange
+            let chapter1 = create_chapter("1", "1", "111");
+            let chapter2 = create_chapter("1", "1", "222");
+
+            //assert
+            assert_eq!(chapter1, chapter2);
+        }
+
+        fn create_chapter(path: &str, label: &str, content: &str) -> Chapter {
+            Chapter {
+                path: path.to_string(),
+                label: label.to_string(),
+                _raw_content: content.to_string(),
+                recreated_structure: Rc::new(ChapterNode::new(
+                    "tag".to_string(),
+                    "content".to_string(),
+                )),
+            }
+        }
+    }
+
+    mod get_body {
+        use crate::chapters::chapter::Chapter;
+
+        #[test]
+        fn should_return_some_when_body_node_exists_in_contnet() {
+            //arrange
+            let chapter_content: &str = r#"
+                <?xml version='1.0' encoding='UTF-8'?>
+                <html xmlns="http://www.w3.org/1999/xhtml">
+                    <head>
+                        <title>DRAGONEZA-1</title>
+                        <link href="../Styles/Dragoneza_idstyles.css" rel="stylesheet" type="text/css"/>
+                        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+                    </head>
+                    <body id="DRAGONEZA" xml:lang="pl-PL">
+                        <div class="Basic-text-frame">
+                            <p id="toc_marker-1" class="TYTUL-R">Spis tre­ści</p>
+                            <p class="spis-tytul"><a href="../Text/DRAGONEZA-2.xhtml#Zakotwiczenie">Ko­bie­ta, któ­ra sły­sza­ła smo­ki</a></p>
+                            <p class="spis-autor">Agniesz­ka Fu­liń­ska</p>
+                        </div>
+                    </body>
+                </html>
+                "#;
+
+            let chapter_node = Chapter::recreate_structure(chapter_content);
+            let chapter = Chapter {
+                path: "path".to_string(),
+                label: "label".to_string(),
+                recreated_structure: chapter_node,
+                _raw_content: chapter_content.to_string(),
+            };
+
+            //act
+            let body = chapter.get_body();
+
+            //assert
+            assert!(body.is_some());
+        }
+
+        #[test]
+        fn should_return_none_when_no_body_node_exists_in_contnet() {
+            //arrange
+            let chapter_content: &str = r#"
+                <?xml version='1.0' encoding='UTF-8'?>
+                <html xmlns="http://www.w3.org/1999/xhtml">
+                    <head>
+                        <title>DRAGONEZA-1</title>
+                        <link href="../Styles/Dragoneza_idstyles.css" rel="stylesheet" type="text/css"/>
+                        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+                    </head>
+                    <div class="Basic-text-frame">
+                        <p id="toc_marker-1" class="TYTUL-R">Spis tre­ści</p>
+                        <p class="spis-tytul"><a href="../Text/DRAGONEZA-2.xhtml#Zakotwiczenie">Ko­bie­ta, któ­ra sły­sza­ła smo­ki</a></p>
+                        <p class="spis-autor">Agniesz­ka Fu­liń­ska</p>
+                    </div>
+                </html>
+                "#;
+
+            let chapter_node = Chapter::recreate_structure(chapter_content);
+            let chapter = Chapter {
+                path: "path".to_string(),
+                label: "label".to_string(),
+                recreated_structure: chapter_node,
+                _raw_content: chapter_content.to_string(),
+            };
+
+            //act
+            let body = chapter.get_body();
+
+            //assert
+            assert!(body.is_none());
+        }
     }
 }

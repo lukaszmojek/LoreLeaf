@@ -1,7 +1,4 @@
-use crate::{
-    chapters::structure::Chapter, epub::EBook,
-    table_of_contents::table_of_contents_item::TableOfContentsItem,
-};
+use crate::{chapters::chapter::Chapter, epub::EBook};
 
 pub struct EBookReader {
     book: EBook,
@@ -66,7 +63,7 @@ mod reader_tests {
     use std::rc::Rc;
 
     use crate::{
-        chapters::structure::{Chapter, ChapterNode},
+        chapters::{chapter::Chapter, chapter_node::ChapterNode},
         epub::EBook,
         reader::EBookReader,
     };
@@ -82,7 +79,7 @@ mod reader_tests {
                     "tag".to_string(),
                     "content".to_string(),
                 )),
-                raw_content: "raw".to_string(),
+                _raw_content: "raw".to_string(),
             }
         }
     }
@@ -178,60 +175,5 @@ mod reader_tests {
         }
         let current_chapter = reader.current_chapter();
         assert_eq!(current_chapter, expected_5th_chapter_138th_in_order);
-    }
-}
-
-#[cfg(test)]
-mod chapter_tests {
-    use super::*;
-
-    mod partial_eq {
-        use std::rc::Rc;
-
-        use crate::chapters::structure::ChapterNode;
-
-        use super::*;
-
-        #[test]
-        fn partial_eq_should_check_path() {
-            //arrange
-            let chapter1 = create_chapter("1", "1", "111");
-            let chapter2 = create_chapter("2", "1", "111");
-
-            //assert
-            assert_ne!(chapter1, chapter2);
-        }
-
-        #[test]
-        fn partial_eq_should_check_label() {
-            //arrange
-            let chapter1 = create_chapter("1", "1", "111");
-            let chapter2 = create_chapter("1", "2", "111");
-
-            //assert
-            assert_ne!(chapter1, chapter2);
-        }
-
-        #[test]
-        fn partial_eq_should_not_check_content() {
-            //arrange
-            let chapter1 = create_chapter("1", "1", "111");
-            let chapter2 = create_chapter("1", "1", "222");
-
-            //assert
-            assert_eq!(chapter1, chapter2);
-        }
-
-        fn create_chapter(path: &str, label: &str, content: &str) -> Chapter {
-            Chapter {
-                path: path.to_string(),
-                label: label.to_string(),
-                raw_content: content.to_string(),
-                recreated_structure: Rc::new(ChapterNode::new(
-                    "tag".to_string(),
-                    "content".to_string(),
-                )),
-            }
-        }
     }
 }
