@@ -5,8 +5,8 @@ use std::{
 
 #[derive(Debug, Clone)]
 pub struct ChapterNode {
-    pub(crate) tag: String,
-    pub(crate) content: RefCell<String>,
+    pub tag: String,
+    pub content: RefCell<String>,
     pub(crate) parent: RefCell<Weak<ChapterNode>>,
     pub(crate) children: RefCell<Vec<Rc<ChapterNode>>>,
 }
@@ -28,6 +28,10 @@ impl ChapterNode {
 
     pub(crate) fn append_to_content(node: &Rc<ChapterNode>, content: &str) {
         node.content.borrow_mut().push_str(content);
+    }
+
+    pub fn get_children(&self) -> Vec<Rc<ChapterNode>> {
+        self.children.borrow().clone()
     }
 }
 

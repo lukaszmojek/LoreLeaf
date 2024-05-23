@@ -79,7 +79,7 @@ impl Chapter {
         current_node
     }
 
-    pub(crate) fn get_body(&self) -> Option<Rc<ChapterNode>> {
+    pub fn get_body(&self) -> Option<Rc<ChapterNode>> {
         const BODY_TAG: &str = "body";
 
         for child_element in self.recreated_structure.children.borrow().iter() {

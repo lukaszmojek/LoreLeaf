@@ -1,9 +1,11 @@
-use bevy::prelude::*;
+use std::borrow::Borrow;
+
+use bevy::{ecs::system::EntityCommands, prelude::*};
 use common::{
     flex_container::FlexContainer, screens::MainScreenViewData, states::NavigationState,
     text::TEXT_COLOR, utilities::despawn_screen,
 };
-use epub::{epub::EBook, reader::EBookReader};
+use epub::{chapters::chapter_node::ChapterNode, epub::EBook, reader::EBookReader};
 use library::library::UserLibrary;
 
 use crate::toolbar::ReaderToolbarBundle;
@@ -36,13 +38,11 @@ fn reader_setup(
         .spawn((FlexContainer::new(None), OnReaderScreen))
         .with_children(|parent| {
             let toolbar_entity = ReaderToolbarBundle::spawn(parent);
-
-            let mut book_content = "Book not found".to_string();
+            let mut chapter_content_tntity = commands
+                .spawn((FlexContainer::new(None), OnReaderScreen))
+                .id();
 
             if let Some(book) = selected_book {
-                book_content = book.name.clone();
-
-                println!("Reading book: {:?}", book);
                 let ebook = match EBook::read_epub(book.path.to_string()) {
                     Ok(ebook) => {
                         println!("SUCCESS");
@@ -57,23 +57,12 @@ fn reader_setup(
 
                 let reader = EBookReader::new(ebook.unwrap());
                 let chapter = reader.current_chapter();
-            }
+                let body_node = chapter.get_body();
 
-            //TODO: Spawn items for all nodes in chapter.recreated_structure
-            parent.spawn(
-                TextBundle::from_section(
-                    book_content,
-                    TextStyle {
-                        font_size: 80.0,
-                        color: TEXT_COLOR,
-                        ..default()
-                    },
-                )
-                .with_style(Style {
-                    margin: UiRect::all(Val::Px(50.0)),
-                    ..default()
-                }),
-            );
+                if let Some(body_node) = body_node {
+                    chapter_content_tntity = create_html_nodes(body_node.borrow(), commands);
+                }
+            }
         })
         .id();
 
@@ -81,3 +70,51 @@ fn reader_setup(
         .entity(main_screen_view_data.container_entity)
         .push_children(&[reader_screen]);
 }
+
+//TODO: Change this approach to only preparing boundles that need to be spawned instead of spawning entities
+fn create_html_nodes(body_node: &ChapterNode, commands: &mut ChildBuilder) -> Entity {
+    let mut entity = commands.spawn((FlexContainer::new(None), OnReaderScreen));
+
+    for child in body_node.get_children().iter() {
+        let child_entity: EntityCommands = match child.tag.as_str() {
+            _ => commands.spawn(TextBundle::from_section(
+                child.content.borrow().clone(),
+                TextStyle {
+                    font_size: 20.0,
+                    color: TEXT_COLOR,
+                    ..default()
+                },
+            )),
+        };
+
+        // let child_entity = create_html_nodes_for_children(&child, commands, child_entity);
+
+        entity.push_children(&[child_entity.id()]);
+    }
+
+    entity.id()
+}
+
+// fn create_html_nodes_for_children(
+//     current_node: &ChapterNode,
+//     mut commands: Commands,
+//     parent_entity_commands: EntityCommands,
+// ) -> Entity {
+//     for child in current_node.get_children().iter() {
+//         let child_entity: EntityCommands = match child.tag.as_str() {
+//             _ => commands.spawn(TextBundle::from_section(
+//                 child.content.borrow().clone(),
+//                 TextStyle {
+//                     font_size: 20.0,
+//                     color: TEXT_COLOR,
+//                     ..default()
+//                 },
+//             )),
+//         };
+
+//         let child_entity = create_html_nodes_for_children(&child, commands, child_entity);
+//         parent_entity_commands.push_children(&[child_entity]);
+//     }
+
+//     parent_entity_commands.id()
+// }

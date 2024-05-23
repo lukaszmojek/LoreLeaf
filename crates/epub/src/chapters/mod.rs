@@ -1,2 +1,2 @@
 pub mod chapter;
-pub(crate) mod chapter_node;
+pub mod chapter_node;
