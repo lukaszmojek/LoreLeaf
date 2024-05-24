@@ -8,7 +8,10 @@ use common::{
 use epub::{chapters::chapter_node::ChapterNode, epub::EBook, reader::EBookReader};
 use library::library::UserLibrary;
 
-use crate::toolbar::ReaderToolbarBundle;
+use crate::{
+    bundles::{ChapterNodeComponent, HeadingComponentBundle, ParagraphComponentBundle},
+    toolbar::ReaderToolbarBundle,
+};
 
 #[derive(Component)]
 pub struct OnReaderScreen;
@@ -93,6 +96,81 @@ fn create_html_nodes(body_node: &ChapterNode, commands: &mut ChildBuilder) -> En
     }
 
     entity.id()
+}
+
+struct ChapterNodeBundle {
+    bundle: ChapterNodeComponent,
+    children: Vec<ChapterNodeComponent>,
+}
+
+impl ChapterNodeBundle {
+    fn from_chapter_node(chapter_node: &ChapterNode) -> ChapterNodeComponent {
+        let mut children = vec![];
+
+        for child in chapter_node.get_children().iter() {
+            let child_bundle = ChapterNodeBundle::from_chapter_node(child.borrow());
+            children.push(child_bundle);
+        }
+
+        let node: ChapterNodeComponent = match chapter_node.tag.as_str() {
+            "div" => ChapterNodeComponent::Heading(HeadingComponentBundle::new(
+                chapter_node.content.borrow().as_str(),
+                children,
+            )),
+            "h1" => ChapterNodeComponent::Heading(HeadingComponentBundle::new(
+                chapter_node.content.borrow().as_str(),
+                children,
+            )),
+            _ => ChapterNodeComponent::Paragraph(ParagraphComponentBundle::new(
+                chapter_node.content.borrow().as_str(),
+                children,
+            )),
+        };
+
+        node
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use bevy::ecs::storage::Table;
+    use epub::{
+        chapters::chapter::Chapter, table_of_contents::table_of_contents_item::TableOfContentsItem,
+    };
+
+    use super::*;
+
+    #[test]
+    fn should_create_chapter_node_bundles_from_equivalent_chapter_nodes() {
+        //arrange
+        let chapter_content: &str = r#"
+            <h1>Chapter 1</h1>
+            <div>Hello there - <i>said Obi Wan</i></div>
+            <p>'General Kenobi' - replied Grievous</p>
+            <div>
+                <div>1</div>
+                <div>2</div>
+                <div>3
+                    <div>3a</div>
+                    <div>3b</div>
+                </div>
+            </div>
+        "#;
+
+        let toc_item = TableOfContentsItem::new(
+            String::new(),
+            String::new(),
+            Some(chapter_content.to_string()),
+        );
+
+        //act
+        let chapter_node = Chapter::from_item_with_content(toc_item, chapter_content.to_string());
+        let sut = ChapterNodeBundle::from_chapter_node(chapter_node.recreated_structure.borrow());
+
+        //assert
+        // assert_eq!(sut.borrow().len(), 4);
+        // assert_eq!(sut.bundle.node., "h1");
+    }
 }
 
 // fn create_html_nodes_for_children(

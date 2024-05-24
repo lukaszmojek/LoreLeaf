@@ -36,6 +36,15 @@ impl Chapter {
         }
     }
 
+    pub fn from_item_with_content(item: TableOfContentsItem, content: String) -> Chapter {
+        Chapter {
+            path: item.path.clone(),
+            label: item.label.clone(),
+            recreated_structure: Chapter::recreate_structure(&content),
+            _raw_content: content,
+        }
+    }
+
     //TODO: Introduce placeholders for the children inside parents
     fn recreate_structure(chapter_content: &str) -> Rc<ChapterNode> {
         let mut root = Rc::new(ChapterNode::new("root".to_string(), String::new()));
