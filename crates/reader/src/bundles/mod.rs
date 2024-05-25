@@ -3,6 +3,7 @@ use bevy::{
     ui::node_bundles::{NodeBundle, TextBundle},
 };
 
+#[derive(Debug)]
 pub enum ChapterNodeComponent {
     Heading(HeadingComponentBundle),
     Paragraph(ParagraphComponentBundle),
@@ -11,48 +12,46 @@ pub enum ChapterNodeComponent {
 }
 
 //TODO: Create factory methods for those
+#[derive(Debug)]
 pub struct HeadingComponentBundle {
-    node: TextBundle,
-    pub children: Vec<ChapterNodeComponent>,
+    pub node: TextBundle,
 }
 
 impl HeadingComponentBundle {
-    pub fn new(content: &str, children: Vec<ChapterNodeComponent>) -> Self {
+    pub fn new(content: &str) -> Self {
         Self {
             node: TextBundle {
                 text: Text::from_section(content, Default::default()),
                 style: Default::default(),
                 ..Default::default()
             },
-            children: children,
         }
     }
 }
 
+#[derive(Debug)]
 pub struct ParagraphComponentBundle {
-    node: TextBundle,
-    children: Vec<ChapterNodeComponent>,
+    pub node: TextBundle,
 }
 
 impl ParagraphComponentBundle {
-    pub fn new(content: &str, children: Vec<ChapterNodeComponent>) -> Self {
+    pub fn new(content: &str) -> Self {
         Self {
             node: TextBundle {
                 text: Text::from_section(content, Default::default()),
                 style: Default::default(),
                 ..Default::default()
             },
-            children: children,
         }
     }
 }
 
+#[derive(Debug)]
 pub struct ImageComponentBundle {
-    node: NodeBundle,
-    children: Vec<ChapterNodeComponent>,
+    pub node: NodeBundle,
 }
 
+#[derive(Debug)]
 pub struct ListComponentBundle {
-    node: NodeBundle,
-    children: Vec<ChapterNodeComponent>,
+    pub node: NodeBundle,
 }

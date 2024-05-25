@@ -41,15 +41,14 @@ fn reader_setup(
         .spawn((FlexContainer::new(None), OnReaderScreen))
         .with_children(|parent| {
             let toolbar_entity = ReaderToolbarBundle::spawn(parent);
-            let mut chapter_content_tntity = commands
-                .spawn((FlexContainer::new(None), OnReaderScreen))
-                .id();
+            let mut chapter_content_entity =
+                parent.spawn((FlexContainer::new(None), OnReaderScreen));
 
             if let Some(book) = selected_book {
                 let ebook = match EBook::read_epub(book.path.to_string()) {
                     Ok(ebook) => {
-                        println!("SUCCESS");
-                        println!("{:?}", ebook.table_of_contents);
+                        // println!("SUCCESS");
+                        // println!("{:?}", ebook.table_of_contents);
                         Some(ebook)
                     }
                     Err(e) => {
@@ -60,10 +59,24 @@ fn reader_setup(
 
                 let reader = EBookReader::new(ebook.unwrap());
                 let chapter = reader.current_chapter();
-                let body_node = chapter.get_body();
 
-                if let Some(body_node) = body_node {
-                    chapter_content_tntity = create_html_nodes(body_node.borrow(), commands);
+                if let Some(body_node) = chapter.get_body() {
+                    chapter_content_entity.with_children(move |parent| {
+                        let chapter_content_nodes =
+                            create_chapter_content_nodes(body_node.borrow());
+
+                        println!("{:?}", chapter_content_nodes);
+
+                        for node in chapter_content_nodes.into_iter() {
+                            let node_to_spawn = match node {
+                                ChapterNodeComponent::Paragraph(bundle) => bundle.node,
+                                ChapterNodeComponent::Heading(bundle) => bundle.node,
+                                _ => panic!("Unexpected enum variant"),
+                            };
+
+                            parent.spawn(node_to_spawn);
+                        }
+                    });
                 }
             }
         })
@@ -74,66 +87,38 @@ fn reader_setup(
         .push_children(&[reader_screen]);
 }
 
-//TODO: Change this approach to only preparing boundles that need to be spawned instead of spawning entities
-fn create_html_nodes(body_node: &ChapterNode, commands: &mut ChildBuilder) -> Entity {
-    let mut entity = commands.spawn((FlexContainer::new(None), OnReaderScreen));
+fn create_chapter_content_nodes(chapter_node: &ChapterNode) -> Vec<ChapterNodeComponent> {
+    let mut chapter_nodes = vec![];
 
-    for child in body_node.get_children().iter() {
-        let child_entity: EntityCommands = match child.tag.as_str() {
-            _ => commands.spawn(TextBundle::from_section(
-                child.content.borrow().clone(),
-                TextStyle {
-                    font_size: 20.0,
-                    color: TEXT_COLOR,
-                    ..default()
-                },
-            )),
-        };
-
-        // let child_entity = create_html_nodes_for_children(&child, commands, child_entity);
-
-        entity.push_children(&[child_entity.id()]);
+    for child in chapter_node.get_children().iter() {
+        let chapter_node = map_to_chapter_node_component(child.borrow());
+        chapter_nodes.push(chapter_node);
     }
 
-    entity.id()
+    chapter_nodes
 }
 
-struct ChapterNodeBundle {
-    bundle: ChapterNodeComponent,
-    children: Vec<ChapterNodeComponent>,
-}
+fn map_to_chapter_node_component(chapter_node: &ChapterNode) -> ChapterNodeComponent {
+    let node: ChapterNodeComponent = match chapter_node.tag.as_str() {
+        "div" => ChapterNodeComponent::Paragraph(ParagraphComponentBundle::new(
+            chapter_node.content.borrow().as_str(),
+        )),
+        "p" => ChapterNodeComponent::Paragraph(ParagraphComponentBundle::new(
+            chapter_node.content.borrow().as_str(),
+        )),
+        "h1" => ChapterNodeComponent::Heading(HeadingComponentBundle::new(
+            chapter_node.content.borrow().as_str(),
+        )),
+        _ => ChapterNodeComponent::Paragraph(ParagraphComponentBundle::new(
+            chapter_node.content.borrow().as_str(),
+        )),
+    };
 
-impl ChapterNodeBundle {
-    fn from_chapter_node(chapter_node: &ChapterNode) -> ChapterNodeComponent {
-        let mut children = vec![];
-
-        for child in chapter_node.get_children().iter() {
-            let child_bundle = ChapterNodeBundle::from_chapter_node(child.borrow());
-            children.push(child_bundle);
-        }
-
-        let node: ChapterNodeComponent = match chapter_node.tag.as_str() {
-            "div" => ChapterNodeComponent::Heading(HeadingComponentBundle::new(
-                chapter_node.content.borrow().as_str(),
-                children,
-            )),
-            "h1" => ChapterNodeComponent::Heading(HeadingComponentBundle::new(
-                chapter_node.content.borrow().as_str(),
-                children,
-            )),
-            _ => ChapterNodeComponent::Paragraph(ParagraphComponentBundle::new(
-                chapter_node.content.borrow().as_str(),
-                children,
-            )),
-        };
-
-        node
-    }
+    node
 }
 
 #[cfg(test)]
 mod tests {
-    use bevy::ecs::storage::Table;
     use epub::{
         chapters::chapter::Chapter, table_of_contents::table_of_contents_item::TableOfContentsItem,
     };
@@ -144,17 +129,16 @@ mod tests {
     fn should_create_chapter_node_bundles_from_equivalent_chapter_nodes() {
         //arrange
         let chapter_content: &str = r#"
-            <h1>Chapter 1</h1>
-            <div>Hello there - <i>said Obi Wan</i></div>
-            <p>'General Kenobi' - replied Grievous</p>
-            <div>
-                <div>1</div>
-                <div>2</div>
-                <div>3
-                    <div>3a</div>
-                    <div>3b</div>
-                </div>
-            </div>
+            <head>
+                <title>Chapter 1</title>
+            </head>
+            <body>
+                <section class="meeting">
+                    <h1>Meeting with the council</h1>
+                    <p>'Hello there' - said Obi Wan Kenobi</p>
+                    <p>'General Kenobi' - replied Grievous</p>
+                </section>
+            </body>
         "#;
 
         let toc_item = TableOfContentsItem::new(
@@ -165,11 +149,26 @@ mod tests {
 
         //act
         let chapter_node = Chapter::from_item_with_content(toc_item, chapter_content.to_string());
-        let sut = ChapterNodeBundle::from_chapter_node(chapter_node.recreated_structure.borrow());
+        let body_node = chapter_node.get_body().expect("Body node not found");
+        let sut = create_chapter_content_nodes(body_node.borrow());
 
         //assert
-        // assert_eq!(sut.borrow().len(), 4);
-        // assert_eq!(sut.bundle.node., "h1");
+        assert_eq!(sut.len(), 3);
+
+        match &sut[0] {
+            ChapterNodeComponent::Heading(bundle) => {}
+            _ => panic!("Unexpected enum variant"),
+        }
+
+        match &sut[1] {
+            ChapterNodeComponent::Paragraph(bundle) => {}
+            _ => panic!("Unexpected enum variant"),
+        }
+
+        match &sut[2] {
+            ChapterNodeComponent::Paragraph(bundle) => {}
+            _ => panic!("Unexpected enum variant"),
+        }
     }
 }
 
