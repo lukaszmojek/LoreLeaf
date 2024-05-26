@@ -46,6 +46,9 @@ impl Chapter {
     }
 
     //TODO: Introduce placeholders for the children inside parents
+    //TODO: Create different new version of this method that would flatten the structure, so every element should have a contnet,
+    // then child content and at the end there would be still a place for parent content, resulting in 3 potential elements in a place of 1 and its children.
+    // Alternatively, this can be dane in other method, when translating the structure to the elements in bevy
     fn recreate_structure(chapter_content: &str) -> Rc<ChapterNode> {
         let mut root = Rc::new(ChapterNode::new("root".to_string(), String::new()));
         let mut current_node = root.clone();
