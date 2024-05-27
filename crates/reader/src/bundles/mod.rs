@@ -1,7 +1,9 @@
 use bevy::{
-    text::Text,
+    prelude::default,
+    text::{Text, TextStyle},
     ui::node_bundles::{NodeBundle, TextBundle},
 };
+use common::text::TEXT_COLOR;
 
 #[derive(Debug)]
 pub enum ChapterNodeComponent {
@@ -21,7 +23,14 @@ impl HeadingComponentBundle {
     pub fn new(content: &str) -> Self {
         Self {
             node: TextBundle {
-                text: Text::from_section(content, Default::default()),
+                text: Text::from_section(
+                    content,
+                    TextStyle {
+                        font_size: 60.0,
+                        color: TEXT_COLOR,
+                        ..default()
+                    },
+                ),
                 style: Default::default(),
                 ..Default::default()
             },
@@ -38,7 +47,14 @@ impl ParagraphComponentBundle {
     pub fn new(content: &str) -> Self {
         Self {
             node: TextBundle {
-                text: Text::from_section(content, Default::default()),
+                text: Text::from_section(
+                    content,
+                    TextStyle {
+                        font_size: 20.0,
+                        color: TEXT_COLOR,
+                        ..default()
+                    },
+                ),
                 style: Default::default(),
                 ..Default::default()
             },

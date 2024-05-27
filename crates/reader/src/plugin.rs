@@ -2,8 +2,11 @@ use std::borrow::Borrow;
 
 use bevy::{ecs::system::EntityCommands, prelude::*};
 use common::{
-    flex_container::FlexContainer, screens::MainScreenViewData, states::NavigationState,
-    text::TEXT_COLOR, utilities::despawn_screen,
+    flex_container::{FlexContainer, FlexContainerStyle},
+    screens::MainScreenViewData,
+    states::NavigationState,
+    text::TEXT_COLOR,
+    utilities::despawn_screen,
 };
 use epub::{chapters::chapter_node::ChapterNode, epub::EBook, reader::EBookReader};
 use library::library::UserLibrary;
@@ -41,8 +44,27 @@ fn reader_setup(
         .spawn((FlexContainer::new(None), OnReaderScreen))
         .with_children(|parent| {
             let toolbar_entity = ReaderToolbarBundle::spawn(parent);
-            let mut chapter_content_entity =
-                parent.spawn((FlexContainer::new(None), OnReaderScreen));
+
+            let chapter_content_style = FlexContainerStyle {
+                flex_direction: FlexDirection::Column,
+                flex_wrap: FlexWrap::NoWrap,
+                align_content: AlignContent::SpaceEvenly,
+                justify_content: JustifyContent::SpaceEvenly,
+                width: Val::Percent(100.0),
+                height: Val::Auto,
+                overflow: Overflow {
+                    x: OverflowAxis::Clip,
+                    y: OverflowAxis::Clip,
+                },
+                background_color: BackgroundColor::from(Color::rgba_from_array([
+                    1.0, 0.2, 1.0, 0.5,
+                ])),
+                ..default()
+            };
+            let mut chapter_content_entity = parent.spawn((
+                FlexContainer::new(Some(chapter_content_style)),
+                OnReaderScreen,
+            ));
 
             if let Some(book) = selected_book {
                 let ebook = match EBook::read_epub(book.path.to_string()) {
@@ -57,27 +79,45 @@ fn reader_setup(
                     }
                 };
 
-                let reader = EBookReader::new(ebook.unwrap());
+                let mut reader = EBookReader::new(ebook.unwrap());
+                //TODO: Those are temporary, just to test how content is displayed
+                reader.move_to_next_chapter();
+                reader.move_to_next_chapter();
+                reader.move_to_next_chapter();
+                reader.move_to_next_chapter();
+                reader.move_to_next_chapter();
+
                 let chapter = reader.current_chapter();
 
                 if let Some(body_node) = chapter.get_body() {
-                    chapter_content_entity.with_children(move |parent| {
+                    chapter_content_entity.with_children(move |content_container_node| {
                         let chapter_content_nodes =
                             create_chapter_content_nodes(body_node.borrow());
 
+                        content_container_node.spawn(TextBundle::from_section(
+                            "ratatatattatat",
+                            TextStyle {
+                                font_size: 24.0,
+                                color: TEXT_COLOR,
+                                ..default()
+                            },
+                        ));
+
                         println!("{:?}", chapter_content_nodes);
 
-                        for node in chapter_content_nodes.into_iter() {
+                        for node in chapter_content_nodes.into_iter().take(20) {
                             let node_to_spawn = match node {
                                 ChapterNodeComponent::Paragraph(bundle) => bundle.node,
                                 ChapterNodeComponent::Heading(bundle) => bundle.node,
                                 _ => panic!("Unexpected enum variant"),
                             };
 
-                            parent.spawn(node_to_spawn);
+                            content_container_node.spawn(node_to_spawn);
                         }
                     });
                 }
+
+                println!("HERE");
             }
         })
         .id();

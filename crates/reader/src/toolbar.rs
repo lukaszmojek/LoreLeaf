@@ -13,7 +13,9 @@ impl ReaderToolbarBundle {
     fn new() -> Self {
         let flex_container_style = FlexContainerStyle {
             background_color: BackgroundColor::from(Color::YELLOW_GREEN),
-            height: Val::Px(75.0),
+            height: Val::Percent(6.0),
+            min_height: Val::Px(50.0),
+            max_height: Val::Px(75.0),
             ..default()
         };
 
