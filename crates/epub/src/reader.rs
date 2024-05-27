@@ -77,6 +77,7 @@ mod reader_tests {
                 label: label,
                 recreated_structure: Rc::new(ChapterNode::new(
                     "tag".to_string(),
+                    vec![],
                     "content".to_string(),
                 )),
                 _raw_content: "raw".to_string(),

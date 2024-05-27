@@ -6,15 +6,17 @@ use std::{
 #[derive(Debug, Clone)]
 pub struct ChapterNode {
     pub tag: String,
+    pub classes: Vec<String>,
     pub content: RefCell<String>,
     pub(crate) parent: RefCell<Weak<ChapterNode>>,
     pub(crate) children: RefCell<Vec<Rc<ChapterNode>>>,
 }
 
 impl ChapterNode {
-    pub(crate) fn new(tag: String, content: String) -> ChapterNode {
+    pub(crate) fn new(tag: String, classes: Vec<String>, content: String) -> ChapterNode {
         ChapterNode {
             tag: tag,
+            classes,
             content: RefCell::new(content),
             parent: RefCell::new(Weak::new()),
             children: RefCell::new(vec![]),
@@ -43,7 +45,7 @@ mod chapter_node_tests {
 
     #[test]
     fn should_create_chapter_node() {
-        let sut = ChapterNode::new("h1".to_string(), "Chapter 1".to_string());
+        let sut = ChapterNode::new("h1".to_string(), vec![], "Chapter 1".to_string());
 
         assert_eq!(sut.tag, "h1".to_string());
         assert_eq!(sut.content, "Chapter 1".to_string().into());
@@ -53,9 +55,14 @@ mod chapter_node_tests {
 
     #[test]
     fn should_add_child_to_chapter_node() {
-        let sut = Rc::new(ChapterNode::new("h1".to_string(), "Chapter 1".to_string()));
+        let sut = Rc::new(ChapterNode::new(
+            "h1".to_string(),
+            vec![],
+            "Chapter 1".to_string(),
+        ));
         let child = Rc::new(ChapterNode::new(
             "div".to_string(),
+            vec![],
             "Some line of text".to_string(),
         ));
 

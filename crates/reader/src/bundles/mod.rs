@@ -1,7 +1,10 @@
 use bevy::{
     prelude::default,
-    text::{Text, TextStyle},
-    ui::node_bundles::{NodeBundle, TextBundle},
+    text::{Text, TextLayoutInfo, TextStyle},
+    ui::{
+        node_bundles::{NodeBundle, TextBundle},
+        widget::TextFlags,
+    },
 };
 use common::text::TEXT_COLOR;
 
