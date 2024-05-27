@@ -124,152 +124,6 @@ impl Chapter {
 }
 
 #[cfg(test)]
-mod chaptger_node_tests {
-
-    mod recreate_structure {
-        use crate::chapters::chapter::Chapter;
-
-        #[test]
-        fn should_recreate_div_with_nested_element_and_multiple_classes() {
-            //arrange
-            let chapter_content: &str = r#"<div class="line bold">Hello there - <i class="character-name">said Obi Wan</i></div>"#;
-
-            //act
-            let sut = Chapter::recreate_structure(chapter_content);
-
-            //assert
-            assert_eq!(sut.tag, "root".to_string());
-            assert_eq!(sut.children.borrow().len(), 1);
-
-            let hello_there_div = &sut.children.borrow()[0];
-
-            assert_eq!(hello_there_div.tag, "div".to_string());
-            assert_eq!(hello_there_div.content, "Hello there - ".to_string().into());
-            assert_eq!(hello_there_div.classes.len(), 2);
-            assert_eq!(hello_there_div.classes[0], "line");
-            assert_eq!(hello_there_div.classes[1], "bold");
-            assert_eq!(hello_there_div.children.borrow().len(), 1);
-
-            let obi_wan_said = &hello_there_div.children.borrow()[0];
-
-            assert_eq!(obi_wan_said.tag, "i".to_string());
-            assert_eq!(obi_wan_said.content, "said Obi Wan".to_string().into());
-            assert_eq!(obi_wan_said.classes.len(), 1);
-            assert_eq!(obi_wan_said.classes[0], "character-name");
-            assert_eq!(obi_wan_said.children.borrow().len(), 0);
-        }
-
-        #[test]
-        fn should_recreate_paragraph_with_single_quotes_in_content() {
-            //arrange
-            let chapter_content: &str =
-                r#"<p class="line">'General Kenobi' - replied Grievous</p>"#;
-
-            //act
-            let sut = Chapter::recreate_structure(chapter_content);
-
-            //assert
-            assert_eq!(sut.tag, "root".to_string());
-            assert_eq!(sut.children.borrow().len(), 1);
-
-            let general_kenobi = &sut.children.borrow()[0];
-
-            assert_eq!(general_kenobi.tag, "p".to_string());
-            assert_eq!(
-                general_kenobi.content,
-                "'General Kenobi' - replied Grievous".to_string().into()
-            );
-            assert_eq!(general_kenobi.classes.len(), 1);
-            assert_eq!(general_kenobi.classes[0], "line");
-            assert_eq!(general_kenobi.children.borrow().len(), 0);
-        }
-
-        #[test]
-        fn should_recreate_complex_chapter_structure() {
-            //arrange
-            let chapter_content: &str = r#"
-            <h1 class="first-heading">Chapter 1</h1>
-            <div class="line bold">Hello there - <i>said Obi Wan</i></div>
-            <p class="line bold">'General Kenobi' - replied Grievous</p>
-            <div class="list">
-                <div>1</div>
-                <div>2</div>
-                <div>3
-                    <div class="nested-first">3a</div>
-                    <div class="nested-last">3b</div>
-                </div>
-            </div>
-        "#;
-
-            //act
-            let sut = Chapter::recreate_structure(chapter_content);
-
-            //assert
-            assert_eq!(sut.tag, "root".to_string());
-            assert_eq!(sut.children.borrow().len(), 4);
-
-            let chapter_heading_h1 = &sut.children.borrow()[0];
-            assert_eq!(chapter_heading_h1.tag, "h1".to_string());
-            assert_eq!(chapter_heading_h1.content, "Chapter 1".to_string().into());
-            assert_eq!(chapter_heading_h1.children.borrow().len(), 0);
-
-            let hello_there_div = &sut.children.borrow()[1];
-            assert_eq!(hello_there_div.tag, "div".to_string());
-            assert_eq!(hello_there_div.content, "Hello there - ".to_string().into());
-            assert_eq!(sut.classes.len(), 1);
-            assert_eq!(sut.classes[0], "first-heading");
-            assert_eq!(hello_there_div.children.borrow().len(), 1);
-
-            let said_obi_wan_i = &hello_there_div.children.borrow()[0];
-            assert_eq!(said_obi_wan_i.tag, "i".to_string());
-            assert_eq!(said_obi_wan_i.content, "said Obi Wan".to_string().into());
-            assert_eq!(said_obi_wan_i.classes.len(), 2);
-            assert_eq!(said_obi_wan_i.classes[0], "line");
-            assert_eq!(said_obi_wan_i.classes[1], "bold");
-            assert_eq!(said_obi_wan_i.children.borrow().len(), 0);
-
-            let general_kenobi_p = &sut.children.borrow()[2];
-            assert_eq!(general_kenobi_p.tag, "p".to_string());
-            assert_eq!(
-                general_kenobi_p.content,
-                "'General Kenobi' - replied Grievous".to_string().into()
-            );
-            assert_eq!(general_kenobi_p.children.borrow().len(), 0);
-
-            let list_div = &sut.children.borrow()[3];
-            assert_eq!(list_div.tag, "div".to_string());
-            assert_eq!(list_div.content, String::new().into());
-            assert_eq!(list_div.children.borrow().len(), 3);
-
-            let first_level_first_div = &list_div.children.borrow()[0];
-            assert_eq!(first_level_first_div.tag, "div".to_string());
-            assert_eq!(first_level_first_div.content, "1".to_string().into());
-            assert_eq!(first_level_first_div.children.borrow().len(), 0);
-
-            let first_level_second_div = &list_div.children.borrow()[1];
-            assert_eq!(first_level_second_div.tag, "div".to_string());
-            assert_eq!(first_level_second_div.content, "2".to_string().into());
-            assert_eq!(first_level_second_div.children.borrow().len(), 0);
-
-            let first_level_third_div = &list_div.children.borrow()[2];
-            assert_eq!(first_level_third_div.tag, "div".to_string());
-            assert_eq!(first_level_third_div.content, "3".to_string().into());
-            assert_eq!(first_level_third_div.children.borrow().len(), 2);
-
-            let second_level_first_div = &first_level_third_div.children.borrow()[0];
-            assert_eq!(second_level_first_div.tag, "div".to_string());
-            assert_eq!(second_level_first_div.content, "3a".to_string().into());
-            assert_eq!(second_level_first_div.children.borrow().len(), 0);
-
-            let second_level_second_div = &first_level_third_div.children.borrow()[1];
-            assert_eq!(second_level_second_div.tag, "div".to_string());
-            assert_eq!(second_level_second_div.content, "3b".to_string().into());
-            assert_eq!(second_level_second_div.children.borrow().len(), 0);
-        }
-    }
-}
-
-#[cfg(test)]
 mod chapter_tests {
     use super::*;
 
@@ -396,6 +250,150 @@ mod chapter_tests {
 
             //assert
             assert!(body.is_none());
+        }
+    }
+
+    mod recreate_structure_tests {
+        use crate::chapters::chapter::Chapter;
+
+        #[test]
+        fn should_recreate_div_with_nested_element_and_multiple_classes() {
+            //arrange
+            let chapter_content: &str = r#"<div class="line bold">Hello there - <i class="character-name">said Obi Wan</i></div>"#;
+
+            //act
+            let sut = Chapter::recreate_structure(chapter_content);
+
+            //assert
+            assert_eq!(sut.tag, "root".to_string());
+            assert_eq!(sut.children.borrow().len(), 1);
+
+            let hello_there_div = &sut.children.borrow()[0];
+
+            assert_eq!(hello_there_div.tag, "div".to_string());
+            assert_eq!(hello_there_div.content, "Hello there - ".to_string().into());
+            assert_eq!(hello_there_div.classes.len(), 2);
+            assert_eq!(hello_there_div.classes[0], "line");
+            assert_eq!(hello_there_div.classes[1], "bold");
+            assert_eq!(hello_there_div.children.borrow().len(), 1);
+
+            let obi_wan_said = &hello_there_div.children.borrow()[0];
+
+            assert_eq!(obi_wan_said.tag, "i".to_string());
+            assert_eq!(obi_wan_said.content, "said Obi Wan".to_string().into());
+            assert_eq!(obi_wan_said.classes.len(), 1);
+            assert_eq!(obi_wan_said.classes[0], "character-name");
+            assert_eq!(obi_wan_said.children.borrow().len(), 0);
+        }
+
+        #[test]
+        fn should_recreate_paragraph_with_single_quotes_in_content() {
+            //arrange
+            let chapter_content: &str =
+                r#"<p class="line">'General Kenobi' - replied Grievous</p>"#;
+
+            //act
+            let sut = Chapter::recreate_structure(chapter_content);
+
+            //assert
+            assert_eq!(sut.tag, "root".to_string());
+            assert_eq!(sut.children.borrow().len(), 1);
+
+            let general_kenobi = &sut.children.borrow()[0];
+
+            assert_eq!(general_kenobi.tag, "p".to_string());
+            assert_eq!(
+                general_kenobi.content,
+                "'General Kenobi' - replied Grievous".to_string().into()
+            );
+            assert_eq!(general_kenobi.classes.len(), 1);
+            assert_eq!(general_kenobi.classes[0], "line");
+            assert_eq!(general_kenobi.children.borrow().len(), 0);
+        }
+
+        #[test]
+        fn should_recreate_complex_chapter_structure() {
+            //arrange
+            let chapter_content: &str = r#"
+            <h1 class="first-heading">Chapter 1</h1>
+            <div class="line bold">Hello there - <i>said Obi Wan</i></div>
+            <p class="line bold">'General Kenobi' - replied Grievous</p>
+            <div class="list">
+                <div>1</div>
+                <div>2</div>
+                <div>3
+                    <div class="nested-first">3a</div>
+                    <div class="nested-last">3b</div>
+                </div>
+            </div>
+        "#;
+
+            //act
+            let sut = Chapter::recreate_structure(chapter_content);
+
+            //assert
+            assert_eq!(sut.tag, "root".to_string());
+            assert_eq!(sut.children.borrow().len(), 4);
+
+            let chapter_heading_h1 = &sut.children.borrow()[0];
+            assert_eq!(chapter_heading_h1.tag, "h1".to_string());
+            assert_eq!(chapter_heading_h1.content, "Chapter 1".to_string().into());
+            assert_eq!(chapter_heading_h1.children.borrow().len(), 0);
+
+            let hello_there_div = &sut.children.borrow()[1];
+            assert_eq!(hello_there_div.tag, "div".to_string());
+            assert_eq!(hello_there_div.content, "Hello there - ".to_string().into());
+            assert_eq!(hello_there_div.classes.len(), 2);
+            assert_eq!(hello_there_div.classes[0], "line");
+            assert_eq!(hello_there_div.classes[1], "bold");
+            assert_eq!(hello_there_div.children.borrow().len(), 1);
+
+            let said_obi_wan_i = &hello_there_div.children.borrow()[0];
+            assert_eq!(said_obi_wan_i.tag, "i".to_string());
+            assert_eq!(said_obi_wan_i.content, "said Obi Wan".to_string().into());
+            assert_eq!(said_obi_wan_i.classes.len(), 0);
+            assert_eq!(said_obi_wan_i.children.borrow().len(), 0);
+
+            let general_kenobi_p = &sut.children.borrow()[2];
+            assert_eq!(general_kenobi_p.tag, "p".to_string());
+            assert_eq!(
+                general_kenobi_p.content,
+                "'General Kenobi' - replied Grievous".to_string().into()
+            );
+            assert_eq!(general_kenobi_p.children.borrow().len(), 0);
+
+            let list_div = &sut.children.borrow()[3];
+            assert_eq!(list_div.tag, "div".to_string());
+            assert_eq!(list_div.content.borrow().trim(), String::new());
+            assert_eq!(list_div.children.borrow().len(), 3);
+
+            let first_level_first_div = &list_div.children.borrow()[0];
+            assert_eq!(first_level_first_div.tag, "div".to_string());
+            assert_eq!(first_level_first_div.content, "1".to_string().into());
+            assert_eq!(first_level_first_div.children.borrow().len(), 0);
+
+            let first_level_second_div = &list_div.children.borrow()[1];
+            assert_eq!(first_level_second_div.tag, "div".to_string());
+            assert_eq!(first_level_second_div.content, "2".to_string().into());
+            assert_eq!(first_level_second_div.children.borrow().len(), 0);
+
+            let first_level_third_div = &list_div.children.borrow()[2];
+            assert_eq!(first_level_third_div.tag, "div".to_string());
+            assert_eq!(
+                first_level_third_div.content.borrow().trim(),
+                "3".to_string()
+            );
+            assert_eq!(first_level_third_div.children.borrow().len(), 2);
+
+            let second_level_first_div = &first_level_third_div.children.borrow()[0];
+            assert_eq!(second_level_first_div.tag, "div".to_string());
+            assert_eq!(second_level_first_div.content, "3a".to_string().into());
+            assert_eq!(second_level_first_div.children.borrow().len(), 0);
+
+            let second_level_second_div = &first_level_third_div.children.borrow()[1];
+            assert_eq!(second_level_second_div.tag, "div".to_string());
+            assert_eq!(second_level_second_div.content, "3b".to_string().into());
+            assert_eq!(second_level_second_div.children.borrow().len(), 0);
         }
     }
 }
