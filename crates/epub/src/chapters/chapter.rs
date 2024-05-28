@@ -1,5 +1,4 @@
-use std::cell::RefCell;
-use std::rc::{Rc, Weak};
+use std::rc::Rc;
 
 use quick_xml::events::Event;
 use quick_xml::Reader;
@@ -46,7 +45,7 @@ impl Chapter {
     }
 
     //TODO: Introduce placeholders for the children inside parents
-    //TODO: Create different new version of this method that would flatten the structure, so every element should have a contnet,
+    //TODO: Create a different version of this method that would flatten the structure, so every element should have a contnet,
     // then child content and at the end there would be still a place for parent content, resulting in 3 potential elements in a place of 1 and its children.
     // Alternatively, this can be dane in other method, when translating the structure to the elements in bevy
     fn recreate_structure(chapter_content: &str) -> Rc<ChapterNode> {
@@ -86,7 +85,7 @@ impl Chapter {
                     current_node = new_node;
                 }
                 Event::Text(e) => {
-                    content = e.unescape().unwrap().to_string();
+                    content = e.unescape().unwrap().replace("\u{ad}", "").to_string();
                     ChapterNode::append_to_content(&current_node, &content);
                 }
                 Event::End(ref e) => {
@@ -254,6 +253,8 @@ mod chapter_tests {
     }
 
     mod recreate_structure_tests {
+        use std::borrow::Borrow;
+
         use crate::chapters::chapter::Chapter;
 
         #[test]
@@ -394,6 +395,35 @@ mod chapter_tests {
             assert_eq!(second_level_second_div.tag, "div".to_string());
             assert_eq!(second_level_second_div.content, "3b".to_string().into());
             assert_eq!(second_level_second_div.children.borrow().len(), 0);
+        }
+
+        #[test]
+        /// Removes U+00ad (soft hyphen) from the content
+        fn should_remove_soft_hyphens_from_the_content() {
+            //arrange
+            let chapter_content: &str = r#"
+            <body>
+                <p>Znaj­do­wa­łem się na polu.</p>
+            </body>
+        "#;
+
+            //act
+            let sut = Chapter::recreate_structure(chapter_content);
+
+            //assert
+            assert_eq!(sut.tag, "root".to_string());
+            assert_eq!(sut.children.borrow().len(), 1);
+
+            let body = &sut.children.borrow()[0];
+            assert_eq!(body.tag, "body".to_string());
+
+            let first_paragraph = &body.children.borrow()[0];
+            assert_eq!(first_paragraph.tag, "p".to_string());
+            assert_eq!(
+                first_paragraph.content,
+                "Znajdowałem się na polu.".to_string().into()
+            );
+            assert_eq!(first_paragraph.children.borrow().len(), 0);
         }
     }
 }
