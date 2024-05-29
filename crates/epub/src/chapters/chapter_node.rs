@@ -1,6 +1,6 @@
 use std::{
     cell::RefCell,
-    rc::{Rc, Weak},
+    sync::{Arc, Weak},
 };
 
 #[derive(Debug, Clone)]
@@ -9,7 +9,7 @@ pub struct ChapterNode {
     pub classes: Vec<String>,
     pub content: RefCell<String>,
     pub(crate) parent: RefCell<Weak<ChapterNode>>,
-    pub(crate) children: RefCell<Vec<Rc<ChapterNode>>>,
+    pub(crate) children: RefCell<Vec<Arc<ChapterNode>>>,
 }
 
 impl ChapterNode {
@@ -23,23 +23,23 @@ impl ChapterNode {
         }
     }
 
-    pub(crate) fn add_child(parent: &Rc<ChapterNode>, child: &Rc<ChapterNode>) {
-        *child.parent.borrow_mut() = Rc::downgrade(parent);
-        parent.children.borrow_mut().push(Rc::clone(child));
+    pub(crate) fn add_child(parent: &Arc<ChapterNode>, child: &Arc<ChapterNode>) {
+        *child.parent.borrow_mut() = Arc::downgrade(parent);
+        parent.children.borrow_mut().push(Arc::clone(child));
     }
 
-    pub(crate) fn append_to_content(node: &Rc<ChapterNode>, content: &str) {
+    pub(crate) fn append_to_content(node: &Arc<ChapterNode>, content: &str) {
         node.content.borrow_mut().push_str(content);
     }
 
-    pub fn get_children(&self) -> Vec<Rc<ChapterNode>> {
+    pub fn get_children(&self) -> Vec<Arc<ChapterNode>> {
         self.children.borrow().clone()
     }
 }
 
 #[cfg(test)]
 mod chapter_node_tests {
-    use std::rc::Rc;
+    use std::{rc::Rc, sync::Arc};
 
     use crate::chapters::chapter_node::ChapterNode;
 
@@ -55,12 +55,12 @@ mod chapter_node_tests {
 
     #[test]
     fn should_add_child_to_chapter_node() {
-        let sut = Rc::new(ChapterNode::new(
+        let sut = Arc::new(ChapterNode::new(
             "h1".to_string(),
             vec![],
             "Chapter 1".to_string(),
         ));
-        let child = Rc::new(ChapterNode::new(
+        let child = Arc::new(ChapterNode::new(
             "div".to_string(),
             vec![],
             "Some line of text".to_string(),

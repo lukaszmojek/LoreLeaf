@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use quick_xml::{events::Event, name::QName, Reader};
 
@@ -6,7 +6,7 @@ use quick_xml::{events::Event, name::QName, Reader};
 pub struct BookManifest {
     /// Each epub needs to have a list of manifest items
     /// Consider hiding that behind a pub method
-    pub items: Vec<Rc<ManifestItem>>,
+    pub items: Vec<Arc<ManifestItem>>,
 }
 
 impl BookManifest {
@@ -15,7 +15,7 @@ impl BookManifest {
         reader.trim_text(true);
 
         let mut buf = Vec::new();
-        let mut manifest_items: Vec<Rc<ManifestItem>> = vec![];
+        let mut manifest_items: Vec<Arc<ManifestItem>> = vec![];
 
         while let Ok(event) = reader.read_event_into(&mut buf) {
             match event {
@@ -38,7 +38,7 @@ impl BookManifest {
     //TODO: Consider moving to ManifestItem
     fn recreate_manifest_entry(
         e: &quick_xml::events::BytesStart<'_>,
-        manifest_items: &mut Vec<Rc<ManifestItem>>,
+        manifest_items: &mut Vec<Arc<ManifestItem>>,
     ) {
         let mut id = String::new();
         let mut href = String::new();
@@ -65,12 +65,12 @@ impl BookManifest {
             href,
             media_type,
         };
-        manifest_items.push(Rc::new(manifest_item))
+        manifest_items.push(Arc::new(manifest_item))
     }
 
     /// Search for an item in the manifest by part of its id or href.
     /// Returns the first item that matches the search.
-    pub fn search_for_item(&self, query: &str) -> Option<Rc<ManifestItem>> {
+    pub fn search_for_item(&self, query: &str) -> Option<Arc<ManifestItem>> {
         for item in &self.items {
             if item.id.contains(query) || item.href.contains(query) {
                 return Some(item.clone());

@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{rc::Rc, sync::Arc};
 
 use quick_xml::{events::Event, name::QName, Reader};
 
@@ -12,7 +12,7 @@ pub struct BookSpine {
 #[derive(Debug)]
 pub struct BookSpineItem {
     pub id: String,
-    pub value: Rc<ManifestItem>,
+    pub value: Arc<ManifestItem>,
 }
 
 impl BookSpine {
@@ -53,7 +53,7 @@ impl BookSpine {
 
                 let spine_item = BookSpineItem {
                     id: item_id,
-                    value: Rc::clone(item),
+                    value: Arc::clone(item),
                 };
                 spine.push(spine_item);
                 break;

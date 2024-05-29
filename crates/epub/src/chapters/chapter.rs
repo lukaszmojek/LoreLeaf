@@ -1,4 +1,5 @@
 use std::rc::Rc;
+use std::sync::Arc;
 
 use quick_xml::events::Event;
 use quick_xml::Reader;
@@ -12,7 +13,7 @@ use super::chapter_node::ChapterNode;
 pub struct Chapter {
     pub path: String,
     pub label: String,
-    pub recreated_structure: Rc<ChapterNode>,
+    pub recreated_structure: Arc<ChapterNode>,
     pub(crate) _raw_content: String,
 }
 
@@ -48,8 +49,8 @@ impl Chapter {
     //TODO: Create a different version of this method that would flatten the structure, so every element should have a contnet,
     // then child content and at the end there would be still a place for parent content, resulting in 3 potential elements in a place of 1 and its children.
     // Alternatively, this can be dane in other method, when translating the structure to the elements in bevy
-    fn recreate_structure(chapter_content: &str) -> Rc<ChapterNode> {
-        let mut root = Rc::new(ChapterNode::new("root".to_string(), vec![], String::new()));
+    fn recreate_structure(chapter_content: &str) -> Arc<ChapterNode> {
+        let mut root = Arc::new(ChapterNode::new("root".to_string(), vec![], String::new()));
         let mut current_node = root.clone();
 
         let mut reader = Reader::from_str(chapter_content);
@@ -78,7 +79,7 @@ impl Chapter {
 
                     tag = String::from_utf8(e.name().0.to_vec()).unwrap();
 
-                    let new_node = Rc::new(ChapterNode::new(tag, classes, String::new()));
+                    let new_node = Arc::new(ChapterNode::new(tag, classes, String::new()));
 
                     ChapterNode::add_child(&current_node, &new_node);
 
@@ -101,18 +102,18 @@ impl Chapter {
         current_node
     }
 
-    pub fn get_body(&self) -> Option<Rc<ChapterNode>> {
+    pub fn get_body(&self) -> Option<Arc<ChapterNode>> {
         const BODY_TAG: &str = "body";
 
         for child_element in self.recreated_structure.children.borrow().iter() {
             if child_element.tag == BODY_TAG {
-                let body = Rc::clone(child_element);
+                let body = Arc::clone(child_element);
                 return Some(body);
             }
 
             for grandchild_element in child_element.children.borrow().iter() {
                 if grandchild_element.tag == BODY_TAG {
-                    let body = Rc::clone(grandchild_element);
+                    let body = Arc::clone(grandchild_element);
                     return Some(body);
                 }
             }

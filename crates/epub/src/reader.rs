@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{chapters::chapter::Chapter, epub::EBook};
 
 pub struct EBookReader {
@@ -5,9 +7,8 @@ pub struct EBookReader {
     session: ReadingSession,
 }
 
-#[derive(Clone)]
 struct ReadingSession {
-    current: Chapter,
+    current: Arc<Chapter>,
 }
 
 impl EBookReader {
@@ -15,7 +16,9 @@ impl EBookReader {
         let first_toc_item = ebook.table_of_contents.items.first().unwrap().clone();
         let chapter = Chapter::from_item(first_toc_item, &mut ebook);
 
-        let session = ReadingSession { current: chapter };
+        let session = ReadingSession {
+            current: Arc::new(chapter),
+        };
 
         Self {
             book: ebook,
@@ -23,8 +26,8 @@ impl EBookReader {
         }
     }
 
-    pub fn current_chapter(&self) -> Chapter {
-        self.session.current.clone()
+    pub fn current_chapter(&self) -> &Chapter {
+        &self.session.current
     }
 
     pub fn move_to_next_chapter(&mut self) {
@@ -36,7 +39,7 @@ impl EBookReader {
         if let Some(next_toc_item) = next_toc_item_to_move_to {
             let current_chapter = Chapter::from_item(next_toc_item.clone(), &mut self.book);
             let session = ReadingSession {
-                current: current_chapter,
+                current: Arc::new(current_chapter),
             };
             self.session = session;
         }
@@ -51,7 +54,7 @@ impl EBookReader {
         if let Some(previous_toc_item) = previous_toc_item_to_move_to {
             let current_chapter = Chapter::from_item(previous_toc_item.clone(), &mut self.book);
             let session = ReadingSession {
-                current: current_chapter,
+                current: Arc::new(current_chapter),
             };
             self.session = session;
         }
@@ -60,7 +63,7 @@ impl EBookReader {
 
 #[cfg(test)]
 mod reader_tests {
-    use std::rc::Rc;
+    use std::{rc::Rc, sync::Arc};
 
     use crate::{
         chapters::{chapter::Chapter, chapter_node::ChapterNode},
@@ -75,7 +78,7 @@ mod reader_tests {
             Chapter {
                 path: path,
                 label: label,
-                recreated_structure: Rc::new(ChapterNode::new(
+                recreated_structure: Arc::new(ChapterNode::new(
                     "tag".to_string(),
                     vec![],
                     "content".to_string(),

@@ -4,6 +4,7 @@ use std::{
     fs::File,
     io::Read,
     path::PathBuf,
+    sync::{Arc, RwLock},
 };
 
 use quick_xml::{events::Event, name::QName, Reader};
@@ -14,15 +15,14 @@ use crate::{
     metadata::BookMetadata,
     spine::BookSpine,
     table_of_contents::{
-        table_of_contents::TableOfContents,
-        table_of_contents_item::TableOfContentsItem,
+        table_of_contents::TableOfContents, table_of_contents_item::TableOfContentsItem,
     },
 };
 
 pub struct EBook {
     pub metadata: BookMetadata,
     pub path: String,
-    archive: RefCell<ZipArchive<File>>, //This probably should be moved to a separate struct
+    archive: RwLock<ZipArchive<File>>, //This probably should be moved to a separate struct
     spine: BookSpine,
     pub manifest: BookManifest,
     pub table_of_contents: TableOfContents,
@@ -129,7 +129,7 @@ impl EBook {
             path: epub_path,
             table_of_contents,
             _content_dir: content_dir,
-            archive: RefCell::new(zip),
+            archive: RwLock::new(zip),
         })
     }
 
@@ -159,7 +159,7 @@ impl EBook {
     ) -> Result<String, Box<dyn std::error::Error>> {
         //TODO: Fix it, so that subdirectories of epub file are detected automatically
 
-        let mut archive = self.archive.borrow_mut();
+        let archive = self.archive.get_mut().expect("Could not get archive");
         let mut target_file_content = archive.by_name(&toc_item.path)?;
         let mut contents = String::new();
 

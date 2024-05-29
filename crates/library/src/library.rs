@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use common::states::NavigationState;
 use directories::UserDirs;
-use epub::epub::EBook;
+use epub::{epub::EBook, reader::EBookReader};
 use std::{
     fs::{self, DirEntry},
     path::Path,
@@ -24,6 +24,7 @@ pub struct UserLibrary {
     to_add: Vec<Book>,
     to_remove: Vec<Book>,
     selected_for_reading: Option<Book>,
+    reader: Option<EBookReader>,
 }
 
 impl UserLibrary {
@@ -34,6 +35,7 @@ impl UserLibrary {
             to_add: vec![],
             to_remove: vec![],
             selected_for_reading: None,
+            reader: None,
         }
     }
 
