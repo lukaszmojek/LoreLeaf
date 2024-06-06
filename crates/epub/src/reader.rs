@@ -102,7 +102,7 @@ mod reader_tests {
         let session = reader.session;
 
         //assert
-        assert_eq!(expected_current_chapter, session.current);
+        assert_eq!(expected_current_chapter, *session.current);
     }
 
     #[test]
@@ -139,14 +139,14 @@ mod reader_tests {
         //act & assert
         //Comparing initial chapter after reader creation
         let current_chapter = reader.current_chapter();
-        assert_eq!(current_chapter, expected_1st_chapter_1st_in_order);
+        assert_eq!(*current_chapter, expected_1st_chapter_1st_in_order);
 
         //Trying to move back to previous chapter, should not change the current chapter since reader is on the first one
         reader.move_to_previous_chapter();
         reader.move_to_previous_chapter();
         reader.move_to_previous_chapter();
         let current_chapter = reader.current_chapter();
-        assert_eq!(current_chapter, expected_1st_chapter_1st_in_order);
+        assert_eq!(*current_chapter, expected_1st_chapter_1st_in_order);
 
         //Moving a couple of chapters in order to the 5th one
         reader.move_to_next_chapter();
@@ -154,30 +154,30 @@ mod reader_tests {
         reader.move_to_next_chapter();
         reader.move_to_next_chapter();
         let current_chapter = reader.current_chapter();
-        assert_eq!(current_chapter, expected_2nd_chapter_5th_in_order);
+        assert_eq!(*current_chapter, expected_2nd_chapter_5th_in_order);
 
         //Moving a couple of chapters in order to the 7th one
         reader.move_to_next_chapter();
         reader.move_to_next_chapter();
         let current_chapter = reader.current_chapter();
-        assert_eq!(current_chapter, expected_3rd_chapter_7th_in_order);
+        assert_eq!(*current_chapter, expected_3rd_chapter_7th_in_order);
 
         //Moving to a previous chapter, 6th in order
         reader.move_to_previous_chapter();
         let current_chapter = reader.current_chapter();
-        assert_eq!(current_chapter, expected_4th_chapter_6th_in_order);
+        assert_eq!(*current_chapter, expected_4th_chapter_6th_in_order);
 
         //Moving to a previous chapter, then to the next in order, landing on 6th
         reader.move_to_previous_chapter();
         reader.move_to_next_chapter();
         let current_chapter = reader.current_chapter();
-        assert_eq!(current_chapter, expected_4th_chapter_6th_in_order);
+        assert_eq!(*current_chapter, expected_4th_chapter_6th_in_order);
 
         //Moving to last chapter. There are only 138 chapters in the book, so moving 150 times should land on the last one
         for _ in 0..150 {
             reader.move_to_next_chapter();
         }
         let current_chapter = reader.current_chapter();
-        assert_eq!(current_chapter, expected_5th_chapter_138th_in_order);
+        assert_eq!(*current_chapter, expected_5th_chapter_138th_in_order);
     }
 }

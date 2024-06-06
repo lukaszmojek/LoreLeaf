@@ -1,4 +1,3 @@
-use std::rc::Rc;
 use std::sync::Arc;
 
 use quick_xml::events::Event;
@@ -50,15 +49,15 @@ impl Chapter {
     // then child content and at the end there would be still a place for parent content, resulting in 3 potential elements in a place of 1 and its children.
     // Alternatively, this can be dane in other method, when translating the structure to the elements in bevy
     fn recreate_structure(chapter_content: &str) -> Arc<ChapterNode> {
-        let mut root = Arc::new(ChapterNode::new("root".to_string(), vec![], String::new()));
+        let root = Arc::new(ChapterNode::new("root".to_string(), vec![], String::new()));
         let mut current_node = root.clone();
 
         let mut reader = Reader::from_str(chapter_content);
         reader.trim_text(false);
 
         let mut buf = Vec::new();
-        let mut tag: String = String::new();
-        let mut content: String = String::new();
+        let mut tag: String;
+        let mut content: String;
 
         while let Ok(event) = reader.read_event_into(&mut buf) {
             match event {
@@ -87,10 +86,10 @@ impl Chapter {
                 }
                 Event::Text(e) => {
                     content = e.unescape().unwrap().replace("\u{ad}", "").to_string();
-                    ChapterNode::append_to_content(&current_node, &content);
+                    current_node.append_to_content(&content);
                 }
-                Event::End(ref e) => {
-                    let parent = current_node.parent.borrow().upgrade().unwrap();
+                Event::End(ref _e) => {
+                    let parent = current_node.get_parent().upgrade().unwrap();
                     current_node = parent;
                 }
                 Event::Eof => break,
@@ -105,13 +104,13 @@ impl Chapter {
     pub fn get_body(&self) -> Option<Arc<ChapterNode>> {
         const BODY_TAG: &str = "body";
 
-        for child_element in self.recreated_structure.children.borrow().iter() {
+        for child_element in self.recreated_structure.get_children().iter() {
             if child_element.tag == BODY_TAG {
                 let body = Arc::clone(child_element);
                 return Some(body);
             }
 
-            for grandchild_element in child_element.children.borrow().iter() {
+            for grandchild_element in child_element.get_children().iter() {
                 if grandchild_element.tag == BODY_TAG {
                     let body = Arc::clone(grandchild_element);
                     return Some(body);
@@ -128,8 +127,6 @@ mod chapter_tests {
     use super::*;
 
     mod partial_eq {
-        use std::rc::Rc;
-
         use super::*;
 
         #[test]
@@ -167,7 +164,7 @@ mod chapter_tests {
                 path: path.to_string(),
                 label: label.to_string(),
                 _raw_content: content.to_string(),
-                recreated_structure: Rc::new(ChapterNode::new(
+                recreated_structure: Arc::new(ChapterNode::new(
                     "tag".to_string(),
                     vec![],
                     "content".to_string(),
@@ -213,7 +210,7 @@ mod chapter_tests {
 
             //assert
             assert!(body.is_some());
-            assert!(body.unwrap().children.borrow()[0]
+            assert!(body.unwrap().get_children()[0]
                 .classes
                 .contains(&"Basic-text-frame".to_string()));
         }
@@ -254,8 +251,6 @@ mod chapter_tests {
     }
 
     mod recreate_structure_tests {
-        use std::borrow::Borrow;
-
         use crate::chapters::chapter::Chapter;
 
         #[test]
@@ -268,24 +263,24 @@ mod chapter_tests {
 
             //assert
             assert_eq!(sut.tag, "root".to_string());
-            assert_eq!(sut.children.borrow().len(), 1);
+            assert_eq!(sut.get_children().len(), 1);
 
-            let hello_there_div = &sut.children.borrow()[0];
+            let hello_there_div = &sut.get_children()[0];
 
             assert_eq!(hello_there_div.tag, "div".to_string());
-            assert_eq!(hello_there_div.content, "Hello there - ".to_string().into());
+            assert_eq!(hello_there_div.get_content(), "Hello there - ".to_string());
             assert_eq!(hello_there_div.classes.len(), 2);
             assert_eq!(hello_there_div.classes[0], "line");
             assert_eq!(hello_there_div.classes[1], "bold");
-            assert_eq!(hello_there_div.children.borrow().len(), 1);
+            assert_eq!(hello_there_div.get_children().len(), 1);
 
-            let obi_wan_said = &hello_there_div.children.borrow()[0];
+            let obi_wan_said = &hello_there_div.get_children()[0];
 
             assert_eq!(obi_wan_said.tag, "i".to_string());
-            assert_eq!(obi_wan_said.content, "said Obi Wan".to_string().into());
+            assert_eq!(obi_wan_said.get_content(), "said Obi Wan".to_string());
             assert_eq!(obi_wan_said.classes.len(), 1);
             assert_eq!(obi_wan_said.classes[0], "character-name");
-            assert_eq!(obi_wan_said.children.borrow().len(), 0);
+            assert_eq!(obi_wan_said.get_children().len(), 0);
         }
 
         #[test]
@@ -299,18 +294,18 @@ mod chapter_tests {
 
             //assert
             assert_eq!(sut.tag, "root".to_string());
-            assert_eq!(sut.children.borrow().len(), 1);
+            assert_eq!(sut.get_children().len(), 1);
 
-            let general_kenobi = &sut.children.borrow()[0];
+            let general_kenobi = &sut.get_children()[0];
 
             assert_eq!(general_kenobi.tag, "p".to_string());
             assert_eq!(
-                general_kenobi.content,
-                "'General Kenobi' - replied Grievous".to_string().into()
+                general_kenobi.get_content(),
+                "'General Kenobi' - replied Grievous".to_string()
             );
             assert_eq!(general_kenobi.classes.len(), 1);
             assert_eq!(general_kenobi.classes[0], "line");
-            assert_eq!(general_kenobi.children.borrow().len(), 0);
+            assert_eq!(general_kenobi.get_children().len(), 0);
         }
 
         #[test]
@@ -335,67 +330,64 @@ mod chapter_tests {
 
             //assert
             assert_eq!(sut.tag, "root".to_string());
-            assert_eq!(sut.children.borrow().len(), 4);
+            assert_eq!(sut.get_children().len(), 4);
 
-            let chapter_heading_h1 = &sut.children.borrow()[0];
+            let chapter_heading_h1 = &sut.get_children()[0];
             assert_eq!(chapter_heading_h1.tag, "h1".to_string());
-            assert_eq!(chapter_heading_h1.content, "Chapter 1".to_string().into());
-            assert_eq!(chapter_heading_h1.children.borrow().len(), 0);
+            assert_eq!(chapter_heading_h1.get_content(), "Chapter 1".to_string());
+            assert_eq!(chapter_heading_h1.get_children().len(), 0);
 
-            let hello_there_div = &sut.children.borrow()[1];
+            let hello_there_div = &sut.get_children()[1];
             assert_eq!(hello_there_div.tag, "div".to_string());
-            assert_eq!(hello_there_div.content, "Hello there - ".to_string().into());
+            assert_eq!(hello_there_div.get_content(), "Hello there - ".to_string());
             assert_eq!(hello_there_div.classes.len(), 2);
             assert_eq!(hello_there_div.classes[0], "line");
             assert_eq!(hello_there_div.classes[1], "bold");
-            assert_eq!(hello_there_div.children.borrow().len(), 1);
+            assert_eq!(hello_there_div.get_children().len(), 1);
 
-            let said_obi_wan_i = &hello_there_div.children.borrow()[0];
+            let said_obi_wan_i = &hello_there_div.get_children()[0];
             assert_eq!(said_obi_wan_i.tag, "i".to_string());
-            assert_eq!(said_obi_wan_i.content, "said Obi Wan".to_string().into());
+            assert_eq!(said_obi_wan_i.get_content(), "said Obi Wan".to_string());
             assert_eq!(said_obi_wan_i.classes.len(), 0);
-            assert_eq!(said_obi_wan_i.children.borrow().len(), 0);
+            assert_eq!(said_obi_wan_i.get_children().len(), 0);
 
-            let general_kenobi_p = &sut.children.borrow()[2];
+            let general_kenobi_p = &sut.get_children()[2];
             assert_eq!(general_kenobi_p.tag, "p".to_string());
             assert_eq!(
-                general_kenobi_p.content,
-                "'General Kenobi' - replied Grievous".to_string().into()
+                general_kenobi_p.get_content(),
+                "'General Kenobi' - replied Grievous".to_string()
             );
-            assert_eq!(general_kenobi_p.children.borrow().len(), 0);
+            assert_eq!(general_kenobi_p.get_children().len(), 0);
 
-            let list_div = &sut.children.borrow()[3];
+            let list_div = &sut.get_children()[3];
             assert_eq!(list_div.tag, "div".to_string());
-            assert_eq!(list_div.content.borrow().trim(), String::new());
-            assert_eq!(list_div.children.borrow().len(), 3);
+            assert_eq!(list_div.get_content().trim(), String::new());
+            assert_eq!(list_div.get_children().len(), 3);
 
-            let first_level_first_div = &list_div.children.borrow()[0];
+            let first_level_first_div = &list_div.get_children()[0];
             assert_eq!(first_level_first_div.tag, "div".to_string());
-            assert_eq!(first_level_first_div.content, "1".to_string().into());
-            assert_eq!(first_level_first_div.children.borrow().len(), 0);
+            assert_eq!(first_level_first_div.get_content(), "1".to_string());
+            assert_eq!(first_level_first_div.get_children().len(), 0);
 
-            let first_level_second_div = &list_div.children.borrow()[1];
+            let first_level_second_div = &list_div.get_children()[1];
             assert_eq!(first_level_second_div.tag, "div".to_string());
-            assert_eq!(first_level_second_div.content, "2".to_string().into());
-            assert_eq!(first_level_second_div.children.borrow().len(), 0);
+            assert_eq!(first_level_second_div.get_content(), "2".to_string());
+            assert_eq!(first_level_second_div.get_children().len(), 0);
 
-            let first_level_third_div = &list_div.children.borrow()[2];
+            let first_level_third_div = &list_div.get_children()[2];
             assert_eq!(first_level_third_div.tag, "div".to_string());
-            assert_eq!(
-                first_level_third_div.content.borrow().trim(),
-                "3".to_string()
-            );
-            assert_eq!(first_level_third_div.children.borrow().len(), 2);
+            assert_eq!(first_level_third_div.get_content().trim(), "3".to_string());
+            assert_eq!(first_level_third_div.get_children().len(), 2);
 
-            let second_level_first_div = &first_level_third_div.children.borrow()[0];
+            let second_level_first_div = &first_level_third_div.get_children()[0];
             assert_eq!(second_level_first_div.tag, "div".to_string());
-            assert_eq!(second_level_first_div.content, "3a".to_string().into());
-            assert_eq!(second_level_first_div.children.borrow().len(), 0);
+            assert_eq!(second_level_first_div.get_content(), "3a".to_string());
+            assert_eq!(second_level_first_div.get_children().len(), 0);
 
-            let second_level_second_div = &first_level_third_div.children.borrow()[1];
+            let second_level_second_div = &first_level_third_div.get_children()[1];
             assert_eq!(second_level_second_div.tag, "div".to_string());
-            assert_eq!(second_level_second_div.content, "3b".to_string().into());
-            assert_eq!(second_level_second_div.children.borrow().len(), 0);
+            assert_eq!(second_level_second_div.get_content(), "3b".to_string());
+            assert_eq!(second_level_second_div.get_children().len(), 0);
         }
 
         #[test]
@@ -413,18 +405,18 @@ mod chapter_tests {
 
             //assert
             assert_eq!(sut.tag, "root".to_string());
-            assert_eq!(sut.children.borrow().len(), 1);
+            assert_eq!(sut.get_children().len(), 1);
 
-            let body = &sut.children.borrow()[0];
+            let body = &sut.get_children()[0];
             assert_eq!(body.tag, "body".to_string());
 
-            let first_paragraph = &body.children.borrow()[0];
+            let first_paragraph = &body.get_children()[0];
             assert_eq!(first_paragraph.tag, "p".to_string());
             assert_eq!(
-                first_paragraph.content,
-                "Znajdowałem się na polu.".to_string().into()
+                first_paragraph.get_content(),
+                "Znajdowałem się na polu.".to_string()
             );
-            assert_eq!(first_paragraph.children.borrow().len(), 0);
+            assert_eq!(first_paragraph.get_children().len(), 0);
         }
     }
 }
