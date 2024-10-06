@@ -1,9 +1,11 @@
 use bevy::{
     prelude::default,
+    scene::ron::de,
     text::{Text, TextLayoutInfo, TextStyle},
     ui::{
         node_bundles::{NodeBundle, TextBundle},
         widget::TextFlags,
+        Style,
     },
 };
 use common::text::TEXT_COLOR;
@@ -58,7 +60,12 @@ impl ParagraphComponentBundle {
                         ..default()
                     },
                 ),
-                style: Default::default(),
+                style: Style {
+                    display: bevy::ui::Display::Flex,
+                    align_content: bevy::ui::AlignContent::FlexStart,
+                    flex_direction: bevy::ui::FlexDirection::Row,
+                    ..default()
+                },
                 ..Default::default()
             },
         }

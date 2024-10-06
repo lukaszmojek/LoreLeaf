@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use common::buttons::configuration::ButtonProperties;
+use common::{buttons::configuration::ButtonProperties, states::NavigationState};
 use library::library::UserLibrary;
 
 #[derive(Bundle)]
@@ -28,7 +28,7 @@ pub fn toolbar_button_interaction_system(
         if button_properties.is_clicked {
             let selected_book = user_library.selected_for_reading().clone();
 
-            let user_library.set(assigned_navigation_state);
+            // user_library.set_selected_for_reading(assigned_navigation_state);
         }
     }
 }

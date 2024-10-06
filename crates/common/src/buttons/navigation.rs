@@ -19,10 +19,6 @@ pub enum NavigationButtonAction {
     LoreExplorer,
 }
 
-pub struct NavigationButtonProperties {
-    pub action: NavigationButtonAction,
-}
-
 pub fn navigation_button_interaction_system(
     mut interaction_query: Query<(&mut ButtonProperties, &NavigationButtonAction), With<Button>>,
     current_navigation_state: Res<State<NavigationState>>,

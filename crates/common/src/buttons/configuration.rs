@@ -17,7 +17,7 @@ pub struct ButtonConfiguration {
 pub struct ButtonProperties {
     pub(crate) is_enabled: bool,
     pub(crate) is_hovered: bool,
-    pub(crate) is_clicked: bool,
+    pub is_clicked: bool,
     pub(crate) is_currently_selected: bool,
 }
 
