@@ -24,7 +24,7 @@ pub struct UserLibrary {
     to_add: Vec<Book>,
     to_remove: Vec<Book>,
     selected_for_reading: Option<Book>,
-    reader: Option<EBookReader>,
+    // reader: Option<EBookReader>,
 }
 
 impl UserLibrary {
@@ -35,7 +35,7 @@ impl UserLibrary {
             to_add: vec![],
             to_remove: vec![],
             selected_for_reading: None,
-            reader: None,
+            // reader: None,
         }
     }
 

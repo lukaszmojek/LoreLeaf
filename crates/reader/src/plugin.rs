@@ -141,16 +141,16 @@ fn create_chapter_content_nodes(chapter_node: &ChapterNode) -> Vec<ChapterNodeCo
 fn map_to_chapter_node_component(chapter_node: &ChapterNode) -> ChapterNodeComponent {
     let node: ChapterNodeComponent = match chapter_node.tag.as_str() {
         "div" => ChapterNodeComponent::Paragraph(ParagraphComponentBundle::new(
-            chapter_node.content.borrow().as_str(),
+            chapter_node.content.borrow().read().unwrap().as_str(),
         )),
         "p" => ChapterNodeComponent::Paragraph(ParagraphComponentBundle::new(
-            chapter_node.content.borrow().as_str(),
+            chapter_node.content.borrow().read().unwrap().as_str(),
         )),
         "h1" => ChapterNodeComponent::Heading(HeadingComponentBundle::new(
-            chapter_node.content.borrow().as_str(),
+            chapter_node.content.borrow().read().unwrap().as_str(),
         )),
         _ => ChapterNodeComponent::Paragraph(ParagraphComponentBundle::new(
-            chapter_node.content.borrow().as_str(),
+            chapter_node.content.borrow().read().unwrap().as_str(),
         )),
     };
 
