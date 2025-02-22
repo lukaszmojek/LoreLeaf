@@ -8,4 +8,5 @@ pub enum NavigationState {
     Library,
     Reader,
     LoreExplorer,
+    Exit,
 }

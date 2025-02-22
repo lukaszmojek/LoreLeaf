@@ -141,6 +141,12 @@ fn home_navigation_setup(mut commands: Commands, asset_server: Res<AssetServer>)
                         "explore", //lore
                         NavigationButtonAction::LoreExplorer,
                     );
+                    spawn_navigation_button(
+                        parent,
+                        &asset_server,
+                        "exit", //lore
+                        NavigationButtonAction::Exit,
+                    );
                 });
         })
         .id();

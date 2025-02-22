@@ -17,6 +17,7 @@ pub enum NavigationButtonAction {
     Library,
     Reader,
     LoreExplorer,
+    Exit,
 }
 
 pub fn navigation_button_interaction_system(
@@ -30,6 +31,7 @@ pub fn navigation_button_interaction_system(
             NavigationButtonAction::Library => NavigationState::Library,
             NavigationButtonAction::Reader => NavigationState::Reader,
             NavigationButtonAction::LoreExplorer => NavigationState::LoreExplorer,
+            NavigationButtonAction::Exit => NavigationState::Exit,
         };
 
         if button_properties.is_clicked {

@@ -1,4 +1,9 @@
-use bevy::{asset::load_internal_binary_asset, prelude::*, winit::WinitSettings};
+use bevy::{
+    asset::load_internal_binary_asset,
+    prelude::*,
+    window::{EnabledButtons, WindowMode},
+    winit::WinitSettings,
+};
 use ui::state::LoreLeafState;
 
 const LORE_LEAF_TITLE: &str = "LoreLeaf";
@@ -15,6 +20,12 @@ pub fn start_app() {
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
                     resolution: [870., 1066.].into(),
+                    mode: WindowMode::Windowed,
+                    enabled_buttons: EnabledButtons {
+                        close: false,
+                        minimize: false,
+                        maximize: false,
+                    },
                     resize_constraints: WindowResizeConstraints {
                         min_width: 800.,
                         min_height: 480.,

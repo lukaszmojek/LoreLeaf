@@ -1,4 +1,6 @@
-use bevy::prelude::*;
+use std::process;
+
+use bevy::{app::AppExit, prelude::*};
 use common::{
     flex_container::{FlexContainer, FlexContainerStyle},
     screens::MainScreenViewData,
@@ -36,8 +38,16 @@ impl Plugin for LibraryPlugin {
             .add_systems(
                 OnExit(NavigationState::Library),
                 despawn_screen::<OnLibraryScreen>,
+            )
+            .add_systems(
+                PreUpdate,
+                (exit_setup).run_if(in_state(NavigationState::Exit)),
             );
     }
+}
+
+fn exit_setup(mut commands: Commands) {
+    process::exit(0);
 }
 
 fn library_setup(
